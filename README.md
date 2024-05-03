@@ -10,7 +10,7 @@ Both `pure` and `workex` should be consumed as git submodules, and the `tsconfig
     "compilerOptions": {
         "paths": {
             "pure/*": ["base/rel/path/to/pure/*"],
-            "workex": ["base/rel/path/to/workex"],
+            "workex": ["base/rel/path/to/workex/lib"],
         }
     },
     "include": ["path/that/includes/the/libraries"]

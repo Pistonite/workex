@@ -2,5 +2,11 @@
 name = "workex"
 version = "0.0.1"
 edition = "2021"
+description = "In-house messaging bindgen library for workers/windows"
+respository = "https://github.com/Pistonite/workex"
+license = "MIT"
+authors = ["Pistonight <terrabyte100k@gmail.com>"]
+exclude = ["lib/**/*", "Taskfile.yml"]
 
 [dependencies]
+clap = { version = "4.5.4", features = ["derive"] }
