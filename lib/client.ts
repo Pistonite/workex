@@ -1,0 +1,129 @@
+/* eslint-disable */
+import type { Result } from "pure/result";
+import { errstr } from "pure/utils";
+
+import type { WorkerLike, WorkexClientOptions, WorkexInternalError, WorkexPromise, WorkexResult } from "./types.ts";
+import { WorkexReturnFId, isMessage } from "./utils.ts";
+
+function makeMessageIdGenerator() {
+    let nextId = 0;
+    return () => nextId++;
+}
+
+const MAX_MID = 500000;
+
+export class WorkexClient<TProto extends string, TFId> {
+    private protocol: TProto;
+    private worker: WorkerLike;
+    private nextMessageId: () => number;
+    private pending: Map<number, (value: any) => void>;
+    private timeout: number;
+
+    private stopped: boolean;
+
+    constructor(protocol: TProto, options: WorkexClientOptions) {
+        this.worker = options.worker;
+        this.nextMessageId = options.nextMessageId || makeMessageIdGenerator();
+        this.pending = new Map();
+        this.timeout = options.timeout || 0;
+        this.protocol = protocol;
+        this.stopped = false;
+
+        const responseHandler = ({data}: {data: unknown}) => {
+            if (this.stopped) {
+                return;
+            }
+            if (!isMessage(this.protocol, data)) {
+                return;
+            }
+
+            const [_, mId, fId, result] = data;
+
+            const resolve = this.pending.get(mId);
+            if (!resolve) {
+                return;
+            }
+            try {
+                this.pending.delete(mId);
+
+                if (fId === WorkexReturnFId) {
+                    resolve({ val: result });
+                } else {
+                    resolve({ err: { type: "Catch", message: errstr(result) } });
+                }
+            } catch (e) {
+                resolve({ err: { type: "InternalError", message: errstr(e) } });
+            }
+        };
+
+        if (options.useAddEventListener && this.worker.addEventListener) {
+            this.worker.addEventListener("message", responseHandler);
+        } else {
+            this.worker.onmessage = responseHandler;
+        }
+    }
+
+    private nextMId(): Result<number, WorkexInternalError> {
+        const nextMessageId = this.nextMessageId;
+        let mId = nextMessageId();
+        if (mId >= MAX_MID) {
+            mId = 0;
+        }
+        if (this.pending.has(mId)) {
+            let initialMId = mId;
+            while (this.pending.has(mId)) {
+                mId = nextMessageId();
+                if (mId === initialMId) {
+                    return { err: {
+                        type: "InternalError",
+                        message: "No available message id"
+                    } };
+                }
+            }
+        }
+        return { val: mId };
+    }
+
+    public post<T>(fId: TFId, args: any[]): Promise<WorkexResult<T>> {
+        if (this.stopped) {
+            return Promise.resolve({ err: { type: "Catch", message: "Terminated" } });
+        }
+        try {
+            const mId = this.nextMId();
+            if (mId.err) {
+                return Promise.resolve(mId.err);
+            }
+            const promise = new Promise((resolve) => {
+                this.pending.set(mId.val, resolve);
+                this.worker.postMessage(["workex", mId.val, fId, args]);
+            });
+            if (!this.timeout) {
+                return promise;
+            }
+            const timeoutPromise = new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve({ err: { type: "Catch", message: "Timeout" }});
+                }, this.timeout);
+            });
+            return Promise.race([promise, timeoutPromise]);
+        } catch (e) {
+            return Promise.resolve({ err: { type: "InternalError", message: errstr(e) } });
+        }
+    }
+
+    public async postVoid(fId: TFId, args: any[]): WorkexPromise<void> {
+        const res = await this.post(fId, args);
+        if (res.err) {
+            return res;
+        }
+        return {};
+    }
+
+    public terminate() {
+        this.stopped = true;
+        if (this.worker.terminate) {
+            this.worker.terminate();
+        }
+    }
+
+}
