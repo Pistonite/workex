@@ -397,3 +397,6 @@ impl Arg {
 }
 
 pub type IOResult<T> = error_stack::Result<T, std::io::Error>;
+pub fn io_err(msg: &str) -> std::io::Error {
+    std::io::Error::new(std::io::ErrorKind::Other, msg)
+}

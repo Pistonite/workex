@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use codize::{cblock, cconcat, clist, Code, Concat};
+use codize::{cblock, cconcat, Concat};
 use error_stack::ResultExt;
 
 use crate::{IOResult, Interface, Package};

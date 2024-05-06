@@ -6,10 +6,16 @@ description = "In-house messaging bindgen library for workers/windows"
 respository = "https://github.com/Pistonite/workex"
 license = "MIT"
 authors = ["Pistonight <terrabyte100k@gmail.com>"]
-exclude = ["lib/**/*", "Taskfile.yml"]
+exclude = [
+    "lib/**/*",
+    "Taskfile.yml",
+    "test/**/*",
+]
 
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
 codize = "0.3.1"
 error-stack = "0.4.1"
+swc_common = { version = "0.33.26", features = ["tty-emitter"] }
+swc_core = { version = "0.91.4", features = ["ecma_ast"] }
 swc_ecma_parser = "0.144.1"
