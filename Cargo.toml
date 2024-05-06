@@ -10,3 +10,6 @@ exclude = ["lib/**/*", "Taskfile.yml"]
 
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
+codize = "0.3.1"
+error-stack = "0.4.1"
+swc_ecma_parser = "0.144.1"

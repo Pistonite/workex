@@ -3,7 +3,7 @@ import type { Result } from "pure/result";
 import { errstr } from "pure/utils";
 
 import type { WorkerLike, WorkexClientOptions, WorkexInternalError, WorkexPromise, WorkexResult } from "./types.ts";
-import { WorkexReturnFId, isMessage } from "./utils.ts";
+import { WorkexMessage, WorkexReturnFId, isMessage } from "./utils.ts";
 
 function makeMessageIdGenerator() {
     let nextId = 0;
@@ -12,7 +12,7 @@ function makeMessageIdGenerator() {
 
 const MAX_MID = 500000;
 
-export class WorkexClient<TProto extends string, TFId> {
+export class WorkexClient<TProto extends string, TFId extends number> {
     private protocol: TProto;
     private worker: WorkerLike;
     private nextMessageId: () => number;
@@ -37,7 +37,7 @@ export class WorkexClient<TProto extends string, TFId> {
                 return;
             }
 
-            const [_, mId, fId, result] = data;
+            const { p: _, m: mId, f: fId, d: result } = data;
 
             const resolve = this.pending.get(mId);
             if (!resolve) {
@@ -95,7 +95,12 @@ export class WorkexClient<TProto extends string, TFId> {
             }
             const promise = new Promise((resolve) => {
                 this.pending.set(mId.val, resolve);
-                this.worker.postMessage(["workex", mId.val, fId, args]);
+                this.worker.postMessage({
+                    p: this.protocol, 
+                    m: mId.val, 
+                    f: fId, 
+                    d: args
+                } satisfies WorkexMessage<TProto>);
             });
             if (!this.timeout) {
                 return promise;

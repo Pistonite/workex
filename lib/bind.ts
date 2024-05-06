@@ -19,15 +19,25 @@ export function bindHost<TProto extends string, TFIds>(
             return;
         }
 
-        const [_, mId, fId, args] = data;
+        const { p: _, m: mId, f: fId, d: args } = data;
         if (!shouldHandle(fId as TFIds)) {
             return;
         }
         try {
             const result = await handler(fId as TFIds, args);
-            worker.postMessage([protocol, mId, WorkexReturnFId, result] satisfies WorkexMessage<TProto>);
+            worker.postMessage({
+                p: protocol, 
+                m: mId, 
+                f: WorkexReturnFId,
+                d: result
+            } satisfies WorkexMessage<TProto>);
         } catch (e) {
-            worker.postMessage([protocol, mId, WorkexCatchFId, errstr(e)] satisfies WorkexMessage<TProto>);
+            worker.postMessage({
+                p: protocol,
+                m: mId,
+                f: WorkexCatchFId,
+                d: errstr(e)
+            } satisfies WorkexMessage<TProto>);
         }
     };
 
