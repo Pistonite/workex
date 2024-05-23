@@ -34,12 +34,11 @@ pub fn emit(pkg: &Package) -> IOResult<()> {
 
 /// Emit protocol.ts
 fn emit_protocol(pkg: &Package) -> IOResult<()> {
-
     let protocol = &pkg.protocol;
     let out_dir = &pkg.out_dir;
 
     let func_id_enum = cblock! {
-        format!("export const {FUNCTION_ID_ENUM_NAME} = {{"), 
+        format!("export const {FUNCTION_ID_ENUM_NAME} = {{"),
         pkg.interfaces.iter().flat_map(|interface| {
             interface.functions.iter().map(|function| {
                 (&interface.name, &function.name)
@@ -89,7 +88,7 @@ fn emit_interface_send(interface: &Interface, out_dir: &Path) -> IOResult<()> {
             format!("private client: {}<{FUNCTION_ID_ENUM_NAME}>", imports.workex_client_ident),
             "",
             cblock! {
-                format!("constructor(options: {}) {{", imports.workex_client_options_ident), 
+                format!("constructor(options: {}) {{", imports.workex_client_options_ident),
                 [
                     format!("this.client = new {}({PROTOCOL_CONST_NAME}, options);", imports.workex_client_options_ident)
                 ],
@@ -105,11 +104,16 @@ fn emit_interface_send(interface: &Interface, out_dir: &Path) -> IOResult<()> {
 
     let output = cconcat![
         header(),
-        format!("import type {{ {} }} from \"./{}\";", interface.name, interface.filename),
+        format!(
+            "import type {{ {} }} from \"./{}\";",
+            interface.name, interface.filename
+        ),
         "",
         cconcat!(imports.imports.iter().map(|import| import.to_code())),
         "",
-        format!("import {{ {PROTOCOL_CONST_NAME}, {FUNCTION_ID_ENUM_NAME} }} from \"./protocol.ts\";"),
+        format!(
+            "import {{ {PROTOCOL_CONST_NAME}, {FUNCTION_ID_ENUM_NAME} }} from \"./protocol.ts\";"
+        ),
         "",
         interface.comment.to_code(),
         class_decl
@@ -153,11 +157,16 @@ fn emit_interface_recv(interface: &Interface, out_dir: &Path) -> IOResult<()> {
 
     let output = cconcat![
         header(),
-        format!("import type {{ {} }} from \"./{}\";", interface.name, interface.filename),
+        format!(
+            "import type {{ {} }} from \"./{}\";",
+            interface.name, interface.filename
+        ),
         "",
         cconcat!(imports.imports.iter().map(|import| import.to_code())),
         "",
-        format!("import {{ {PROTOCOL_CONST_NAME}, {FUNCTION_ID_ENUM_NAME} }} from \"./protocol.ts\";"),
+        format!(
+            "import {{ {PROTOCOL_CONST_NAME}, {FUNCTION_ID_ENUM_NAME} }} from \"./protocol.ts\";"
+        ),
         "",
         bind_func
     ];
@@ -170,7 +179,8 @@ fn emit_interface_recv(interface: &Interface, out_dir: &Path) -> IOResult<()> {
 
 fn write_file<T: AsRef<str>>(path: &Path, code: T) -> IOResult<()> {
     println!("saving {}", path.display());
-    fs::write(path, code.as_ref()).attach_printable(format!("Failed to write {}", path.display()))?;
+    fs::write(path, code.as_ref())
+        .attach_printable(format!("Failed to write {}", path.display()))?;
 
     Ok(())
 }

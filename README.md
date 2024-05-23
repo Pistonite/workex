@@ -29,10 +29,18 @@ workex INPUT [...INPUTS] --protocol PROTOCOL
 ```
 The `INPUTS` are TypeScript files that contain `export interface` declarations.
 All exported interface will be scanned. If you want to exclude some interface,
-put them in another file that's not part of the `INPUTS`. Other exports, including `export type`,
-are ignored.
+put them in another file that's not part of the `INPUTS`.
+Other exports are ignored, including:
+
+- `export type`
+- `declare`
 
 All `import` statements will also be included in the output, no unused import analysis is done.
+
+Some syntaxes are not supported:
+- namespaces
+- imports in the middle of exports (why)
+Unsupported syntax will generate an error.
 
 The `protocol` should be a JavaScript literal, such as `"myproto"` (The quotes need to be part
 of the input, so in shell you might need to use `'"myproto"'`. This is used to filter messages

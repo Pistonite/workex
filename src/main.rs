@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 use clap::Parser;
 use error_stack::ResultExt;
 
-mod parse;
 mod data;
+mod parse;
 use data::*;
 mod emit;
 
@@ -22,9 +22,7 @@ fn main() -> IOResult<()> {
 
     emit::emit(&pkg)?;
     Ok(())
-
 }
-
 
 #[derive(Debug, Parser)]
 #[command(author, about, version, arg_required_else_help(true))]
@@ -47,7 +45,7 @@ struct Cli {
 fn get_out_dir(inputs: &[String]) -> IOResult<PathBuf> {
     let out_dir = match inputs.first() {
         None => return Err(io_err("no input files"))?,
-        Some(path) => get_parent_dir(path)?
+        Some(path) => get_parent_dir(path)?,
     };
     for input in inputs.iter().skip(1) {
         let path = get_parent_dir(input)?;
@@ -70,4 +68,3 @@ fn get_parent_dir(path: &str) -> IOResult<PathBuf> {
         .canonicalize()
         .attach_printable("cannot canonicalize output directory")
 }
-

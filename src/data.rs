@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use codize::{cblock, cconcat, clist, Code};
 
-
 pub struct Package {
     /// All interfaces in the package, sorted by name
     pub interfaces: Vec<Interface>,
@@ -13,9 +12,12 @@ pub struct Package {
 }
 
 pub struct Interface {
+    /// The name for this interface
     pub name: String,
-    /// File name where the interface is defined, including the extension
+    /// File name where the interface is defined, including the extension.
+    /// This is for generating the `import` statements to import this interface
     pub filename: String,
+    /// The comment block for this interface
     pub comment: CommentBlock,
     /// Original import statements from the source file
     pub imports: Vec<Import>,
@@ -30,21 +32,23 @@ impl Interface {
     /// - WorkexPromise
     pub fn get_send_imports(&self) -> PatchedSendImports {
         let mut imports = self.imports.clone();
-        let import = match imports.iter_mut().find(|x| x.from == "workex") {
-            Some(x) => {
+        let idents = match imports.iter_mut().find(|x| x.is_workex()) {
+            Some(Import::Import {
+                is_type, idents, ..
+            }) => {
                 // turn off type import on the outer level
                 // since we need to add the WorkexClient import
-                if x.is_type {
-                    x.is_type = false;
-                    for ident in x.idents.iter_mut() {
+                if *is_type {
+                    *is_type = false;
+                    for ident in idents.iter_mut() {
                         ident.is_type = true;
                     }
                 }
-                x
+                idents
             }
-            None => {
+            _ => {
                 // add a new import statement
-                imports.push(Import {
+                imports.push(Import::Import {
                     is_type: false,
                     idents: vec![
                         ImportIdent::workex_client(),
@@ -62,28 +66,27 @@ impl Interface {
             }
         };
 
-        let workex_client_ident = match import.idents.iter().find(|x| x.ident == "WorkexClient") {
-            Some(x) => { x.active_ident().to_string() }
+        let workex_client_ident = match idents.iter().find(|x| x.ident == "WorkexClient") {
+            Some(x) => x.active_ident().to_string(),
             None => {
-                import.idents.push(ImportIdent::workex_client());
+                idents.push(ImportIdent::workex_client());
                 "WorkexClient".to_string()
             }
         };
 
-        let workex_client_options_ident = match import.idents.iter().find(|x| x.ident == "WorkexClientOptions") {
-            Some(x) => {
-                x.active_ident().to_string()
-            }
-            None => {
-                import.idents.push(ImportIdent::workex_client_options());
-                "WorkexClientOptions".to_string()
-            }
-        };
+        let workex_client_options_ident =
+            match idents.iter().find(|x| x.ident == "WorkexClientOptions") {
+                Some(x) => x.active_ident().to_string(),
+                None => {
+                    idents.push(ImportIdent::workex_client_options());
+                    "WorkexClientOptions".to_string()
+                }
+            };
 
-        let workex_promise_ident = match import.idents.iter().find(|x| x.ident == "WorkexPromise") {
-            Some(x) => { x.active_ident().to_string() }
+        let workex_promise_ident = match idents.iter().find(|x| x.ident == "WorkexPromise") {
+            Some(x) => x.active_ident().to_string(),
             None => {
-                import.idents.push(ImportIdent::workex_promise());
+                idents.push(ImportIdent::workex_promise());
                 "WorkexPromise".to_string()
             }
         };
@@ -100,21 +103,23 @@ impl Interface {
     /// - WorkexBindOptions
     pub fn get_recv_imports(&self) -> PatchedRecvImports {
         let mut imports = self.imports.clone();
-        let import = match imports.iter_mut().find(|x| x.from == "workex") {
-            Some(x) => {
+        let idents = match imports.iter_mut().find(|x| x.is_workex()) {
+            Some(Import::Import {
+                is_type, idents, ..
+            }) => {
                 // turn off type import on the outer level
                 // since we need to add the bindHost import
-                if x.is_type {
-                    x.is_type = false;
-                    for ident in x.idents.iter_mut() {
+                if *is_type {
+                    *is_type = false;
+                    for ident in idents.iter_mut() {
                         ident.is_type = true;
                     }
                 }
-                x
+                idents
             }
-            None => {
+            _ => {
                 // add a new import statement
-                imports.push(Import {
+                imports.push(Import::Import {
                     is_type: false,
                     idents: vec![
                         ImportIdent::workex_bind_options(),
@@ -130,22 +135,19 @@ impl Interface {
             }
         };
 
-        let workex_bind_options_ident = match import.idents.iter().find(|x| x.ident == "WorkexBindOptions") {
-            Some(x) => {
-                x.active_ident().to_string()
-            }
+        let workex_bind_options_ident = match idents.iter().find(|x| x.ident == "WorkexBindOptions")
+        {
+            Some(x) => x.active_ident().to_string(),
             None => {
-                import.idents.push(ImportIdent::workex_bind_options());
+                idents.push(ImportIdent::workex_bind_options());
                 "WorkexBindOptions".to_string()
             }
         };
 
-        let workex_bind_host_ident = match import.idents.iter().find(|x| x.ident == "bindHost") {
-            Some(x) => {
-                x.active_ident().to_string()
-            }
+        let workex_bind_host_ident = match idents.iter().find(|x| x.ident == "bindHost") {
+            Some(x) => x.active_ident().to_string(),
             None => {
-                import.idents.push(ImportIdent::workex_bind_host());
+                idents.push(ImportIdent::workex_bind_host());
                 "bindHost".to_string()
             }
         };
@@ -164,7 +166,8 @@ impl Interface {
                 format!("{funcid_enum}.{}_{}", self.name, f.name)
             }))],
             "]);"
-        }.into()
+        }
+        .into()
     }
 }
 
@@ -194,13 +197,18 @@ pub struct PatchedRecvImports {
 
 /// An `import` statement
 #[derive(Debug, Clone, PartialEq)]
-pub struct Import {
-    /// If the import has the `type` keyword (`import type`)
-    pub is_type: bool,
-    /// The identifiers in the import block
-    pub idents: Vec<ImportIdent>,
-    /// The string in the `from` part of the import statement
-    pub from: String,
+pub enum Import {
+    /// An unparsed import because it contains unsupported syntax
+    Opaque(String),
+    /// A regular parsed import
+    Import {
+        /// If the import has the `type` keyword (`import type`)
+        is_type: bool,
+        /// The identifiers in the import block
+        idents: Vec<ImportIdent>,
+        /// The string in the `from` part of the import statement
+        from: String,
+    },
 }
 
 fn should_inline_import_list(x: &codize::List) -> bool {
@@ -208,14 +216,27 @@ fn should_inline_import_list(x: &codize::List) -> bool {
 }
 
 impl Import {
+    /// Return if this import is `import type? { ... } from "workex"`
+    pub fn is_workex(&self) -> bool {
+        match self {
+            Self::Opaque(_) => false,
+            Self::Import { from, .. } => from == "workex",
+        }
+    }
+    /// Emit code for this import
     pub fn to_code(&self) -> Code {
-        cblock! {
-            "import {",
-            [
-                clist!("," => self.idents.iter().map(|x| x.to_repr())).inline_when(should_inline_import_list)
-            ],
-            format!("}} from \"{}\";", self.from)
-        }.into()
+        match self {
+            Self::Opaque(s) => s.to_string().into(),
+            Self::Import { is_type, idents, from } => {
+                cblock! {
+                    if *is_type { "import type {" } else { "import {" },
+                    [
+                    clist!("," => idents.iter().map(|x| x.to_repr())).inline_when(should_inline_import_list)
+                ],
+                    format!("}} from \"{}\";", from)
+                }.into()
+            }
+        }
     }
 }
 
@@ -286,7 +307,10 @@ impl ImportIdent {
 
     /// Get the identifier to use in code
     pub fn active_ident(&self) -> &str {
-        self.rename.as_ref().map(|x| x.as_str()).unwrap_or(&self.ident)
+        self.rename
+            .as_ref()
+            .map(|x| x.as_str())
+            .unwrap_or(&self.ident)
     }
 }
 
@@ -330,20 +354,22 @@ impl Function {
             "}"
         }.connected();
 
-        cconcat![
-            "",
-            comment,
-            function_decl,
-            function_body
-        ].into()
+        cconcat!["", comment, function_decl, function_body].into()
     }
 
-    pub fn to_recv_case(&self, funcid_expr: &str, delegate_ident: &str, payload_ident: &str) -> Code {
+    pub fn to_recv_case(
+        &self,
+        funcid_expr: &str,
+        delegate_ident: &str,
+        payload_ident: &str,
+    ) -> Code {
         cblock! {
             format!("case {funcid_expr}:"),
             [format!("return await {delegate_ident}.{}(...{payload_ident})", self.name)],
             ""
-        }.connected().into()
+        }
+        .connected()
+        .into()
     }
 }
 
@@ -361,19 +387,21 @@ impl CommentBlock {
             CommentStyle::TripleSlash => {
                 cconcat!(self.lines.iter().map(|line| format!("/// {line}"))).into()
             }
-            CommentStyle::JsDoc => {
-                cconcat![
-                    "/**",
-                    cconcat!(self.lines.iter().map(|line| format!(" * {line}"))),
-                    " */"
-                ].into()
-            }
+            CommentStyle::JsDoc => cconcat![
+                "/**",
+                cconcat!(self.lines.iter().map(|line| format!(" * {line}"))),
+                " */"
+            ]
+            .into(),
         }
     }
 }
 
+/// Style of a comment block
 pub enum CommentStyle {
+    /// `///` comments
     TripleSlash,
+    /// `/** ... */` comments
     JsDoc,
 }
 
@@ -397,6 +425,6 @@ impl Arg {
 }
 
 pub type IOResult<T> = error_stack::Result<T, std::io::Error>;
-pub fn io_err(msg: &str) -> std::io::Error {
-    std::io::Error::new(std::io::ErrorKind::Other, msg)
+pub fn io_err<T: Into<String>>(msg: T) -> std::io::Error {
+    std::io::Error::new(std::io::ErrorKind::Other, msg.into())
 }
