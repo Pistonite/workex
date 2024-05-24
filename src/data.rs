@@ -148,65 +148,6 @@ impl PatchedImports {
         }
     }
 
-    // /// Patch the original imports to include the Workex imports for recv if not already included
-    // /// - WorkexBindOptions
-    // pub fn make_recv_imports(imports: &[Import]) -> PatchedRecvImports {
-    //     let mut imports = imports.to_vec();
-    //     let idents = match imports.iter_mut().find(|x| x.is_workex()) {
-    //         Some(Import::Import {
-    //             is_type, idents, ..
-    //         }) => {
-    //             // turn off type import on the outer level
-    //             // since we need to add the bindHost import
-    //             if *is_type {
-    //                 *is_type = false;
-    //                 for ident in idents.iter_mut() {
-    //                     ident.is_type = true;
-    //                 }
-    //             }
-    //             idents
-    //         }
-    //         _ => {
-    //             // add a new import statement
-    //             imports.push(Import::Import {
-    //                 is_type: false,
-    //                 idents: vec![
-    //                     ImportIdent::workex_bind_options(),
-    //                     ImportIdent::workex_bind_host(),
-    //                 ],
-    //                 from: "workex".to_string(),
-    //             });
-    //             return PatchedRecvImports {
-    //                 workex_bind_options_ident: "WorkexBindOptions".to_string(),
-    //                 workex_bind_host_ident: "bindHost".to_string(),
-    //                 imports,
-    //             };
-    //         }
-    //     };
-    //
-    //     let workex_bind_options_ident = match idents.iter().find(|x| x.ident == "WorkexBindOptions")
-    //     {
-    //         Some(x) => x.active_ident().to_string(),
-    //         None => {
-    //             idents.push(ImportIdent::workex_bind_options());
-    //             "WorkexBindOptions".to_string()
-    //         }
-    //     };
-    //
-    //     let workex_bind_host_ident = match idents.iter().find(|x| x.ident == "bindHost") {
-    //         Some(x) => x.active_ident().to_string(),
-    //         None => {
-    //             idents.push(ImportIdent::workex_bind_host());
-    //             "bindHost".to_string()
-    //         }
-    //     };
-    //
-    //     PatchedRecvImports {
-    //         workex_bind_options_ident,
-    //         workex_bind_host_ident,
-    //         imports,
-    //     }
-    // }
 }
 
 /// Patched imports for the *.send.ts files
@@ -221,17 +162,6 @@ pub struct PatchedSendImports {
     /// All import statements
     pub imports: Vec<Import>,
 }
-
-// /// Patched imports for the *.recv.ts files
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct PatchedRecvImports {
-//     /// Identifier for WorkexBindOptions
-//     pub workex_bind_options_ident: String,
-//     /// Identifier for bindHost
-//     pub workex_bind_host_ident: String,
-//     /// All import statements
-//     pub imports: Vec<Import>,
-// }
 
 /// An `import` statement
 #[derive(Debug, Clone, PartialEq)]
