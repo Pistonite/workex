@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { errstr } from "pure/utils";
 
 import type { WorkexBindOptions } from "./types.ts";
@@ -10,7 +11,7 @@ export function bindHost<TProto extends string, TFIds>(
     /// Check if the request should be handled by this handler
     shouldHandle: (fId: TFIds) => boolean,
     /// Handler to handle the request
-    handler: (fId: TFIds, data: unknown) => Promise<unknown>,
+    handler: (fId: TFIds, data: any[]) => Promise<any>,
 ): void {
     const { worker } = options;
 
@@ -24,7 +25,7 @@ export function bindHost<TProto extends string, TFIds>(
             return;
         }
         try {
-            const result = await handler(fId as TFIds, args);
+            const result = await handler(fId as TFIds, args as unknown[]);
             worker.postMessage({
                 p: protocol, 
                 m: mId, 

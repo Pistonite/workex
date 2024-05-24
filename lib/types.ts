@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Result, VoidResult } from "pure/result";
 
 export type WorkexCatch = {

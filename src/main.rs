@@ -21,6 +21,7 @@ fn main() -> IOResult<()> {
     };
 
     emit::emit(&pkg)?;
+    println!("{} interfaces generated", pkg.interfaces.len());
     Ok(())
 }
 
@@ -44,13 +45,13 @@ struct Cli {
 
 fn get_out_dir(inputs: &[String]) -> IOResult<PathBuf> {
     let out_dir = match inputs.first() {
-        None => return Err(io_err("no input files"))?,
+        None => Err(io_err("no input files"))?,
         Some(path) => get_parent_dir(path)?,
     };
     for input in inputs.iter().skip(1) {
         let path = get_parent_dir(input)?;
         if path != out_dir {
-            return Err(io_err("input files must be in the same directory"))?;
+            Err(io_err("input files must be in the same directory"))?;
         }
     }
     Ok(out_dir)
@@ -60,7 +61,7 @@ fn get_parent_dir(path: &str) -> IOResult<PathBuf> {
     let p = Path::new(path);
 
     if !p.exists() {
-        return Err(io_err(&format!("input file does not exist: {}", path)))?;
+        Err(io_err(format!("input file does not exist: {}", path)))?;
     }
 
     p.parent()

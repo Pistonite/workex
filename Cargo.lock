@@ -206,9 +206,9 @@ checksum = "98cc8fbded0c607b7ba9dd60cd98df59af97e84d24e49c8557331cfc26d301ce"
 
 [[package]]
 name = "codize"
-version = "0.3.1"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e7d7940fd0dad941fb23aa1352ea23677e25ec2928a697b4815adb353405178"
+checksum = "9fc5c2a8623ba8c093aeadf57a112769a87bd364233c0a466643210b78208fbd"
 dependencies = [
  "derivative",
 ]

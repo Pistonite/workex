@@ -36,6 +36,8 @@ Other exports are ignored, including:
 - `declare`
 
 All `import` statements will also be included in the output, no unused import analysis is done.
+Note that you should almost always only import types that are used in the interfaces, which means
+they should also be used in the output.
 
 Some syntaxes are not supported:
 - namespaces
