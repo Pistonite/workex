@@ -16,7 +16,7 @@ export interface TestFoo {
     /** 
      * buz
      */
-    buz(a: number, b: number, c?: number): Promise<string>;
+    terminate_(a: number, b: number, c?: number): Promise<string>;
 }
 
 // This is not included because it is a type

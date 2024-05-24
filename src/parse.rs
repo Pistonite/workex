@@ -449,6 +449,10 @@ impl<'a, 'b, 'c, 'd> ParseInterface<'a, 'b, 'c, 'd> {
                 return None;
             }
         };
+        if name == "terminate" {
+            self.emit_error(method.span, "method name `terminate` is reserved");
+            return None;
+        }
         Some(Function {
             name,
             comment: self.parse_comments_at_pos(method.span.lo()),

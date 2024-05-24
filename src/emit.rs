@@ -100,7 +100,18 @@ fn emit_interface_send(interface: &Interface, out_dir: &Path) -> IOResult<()> {
             cconcat!(interface.functions.iter().map(|f| {
                 let funcid_expr = format!("{FUNCTION_ID_ENUM_NAME}.{}_{}", interface.name, f.name);
                 f.to_send_function(&funcid_expr, &imports.workex_promise_ident)
-            }))
+            })),
+            "",
+            "/**",
+            " * Terminate the client and the underlying worker",
+            " */",
+            cblock! {
+                "public terminate() {",
+                [
+                    "this.client.terminate();"
+                ],
+                "}"
+            }
         ],
         "}"
     };
