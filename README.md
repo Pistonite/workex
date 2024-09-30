@@ -159,8 +159,8 @@ Otherwise, run the following commands:
 bun install
 cargo run -- -p app example/proto.ts
 mkdir -p example/dist
-bun build example/app.ts --outfile example/dist/app.js --minify
-bun build example/worker.ts --outfile example/dist/worker.js --minify
+bun build example/app.ts --outfile example/dist/app.js
+bun build example/worker.ts --outfile example/dist/worker.js
 bunx serve example
 ```
 
@@ -230,7 +230,10 @@ print("started");
 
 async function someExpensiveWork(): Promise<string> {
   // do some expensive work
-  // ...
+  let now = Date.now();
+  while (Date.now() - now < 2000) {
+    // do nothing
+  }
   return "Hello from worker!";
 }
 
@@ -238,7 +241,8 @@ async function someExpensiveWork(): Promise<string> {
 let isAppReady = false;
 
 // Create the handler to handle the messages sent by app
-// using the `Delegate` type, each function here returns a regular
+//
+// Using the `Delegate` type, each function here returns a regular
 // Promise instead of WorkexPromise. Then later we use `hostFromDelegate`
 // to wrap the result of each function as WorkexPromise
 
@@ -251,7 +255,9 @@ const handler = {
   },
   doWork(): Promise<string> {
     print("received doWork request from app");
-    return someExpensiveWork();
+    const result = someExpensiveWork();
+    print("work done!");
+    return result;
   },
 } satisfies Delegate<WorkerMsgHandler>;
 
@@ -270,10 +276,15 @@ print("initialized");
 
 // tell the app we are ready
 async function main() {
-  // in the initial handshake, we don't know if the app has started listening,
-  // so we keep trying until the app calls back
-  let attempt = 1;
+  // According to https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Introducing_workers,
+  // Workers are started as soon as they are created.
+  // So we have this handshake process to ensure we don't miss the ready call
+  // In my testing in both Chrome and Firefox however, the worker does not start
+  // until the current task is finished, but I cannot find any specification/documentation
+  // that guarantees that
+  let attempt = 0;
   while (!isAppReady) {
+    attempt++;
     print("telling app we are ready (attempt " + attempt + ")");
     // we cannot await here, because we might be calling
     // before the app registers the handler,
@@ -301,14 +312,13 @@ function print(msg: any) {
 }
 
 export async function createWorker(): Promise<WorkerMsgHandlerClient> {
-  print("Creating worker");
+  print("creating worker");
   const worker = new Worker("/dist/worker.js"); // your worker file
   const options = {
     worker,
     useAddEventListener: true,
   };
   const client = new WorkerMsgHandlerClient(options);
-  // after creation, the worker will start executing right away in a separate thread
   // so we need to know when it's ready
   await new Promise<void>((resolve) => {
     const handler = {
@@ -334,6 +344,15 @@ export async function createWorker(): Promise<WorkerMsgHandlerClient> {
 async function main() {
   print("starting");
   const worker = await createWorker();
+
+  setTimeout(() => {
+    // to prove workers are on separate threads
+    // log a message while the worker is synchronously
+    // doing some work
+    print(
+      "if this message is before `work done!`, then worker is on a separate thread",
+    );
+  }, 1000);
 
   const result: WorkexResult<string> = await worker.doWork();
   if (result.val) {

@@ -15,7 +15,10 @@ print("started");
 
 async function someExpensiveWork(): Promise<string> {
   // do some expensive work
-  // ...
+  let now = Date.now();
+  while (Date.now() - now < 2000) {
+    // do nothing
+  }
   return "Hello from worker!";
 }
 
@@ -23,7 +26,8 @@ async function someExpensiveWork(): Promise<string> {
 let isAppReady = false;
 
 // Create the handler to handle the messages sent by app
-// using the `Delegate` type, each function here returns a regular
+//
+// Using the `Delegate` type, each function here returns a regular
 // Promise instead of WorkexPromise. Then later we use `hostFromDelegate`
 // to wrap the result of each function as WorkexPromise
 
@@ -36,7 +40,9 @@ const handler = {
   },
   doWork(): Promise<string> {
     print("received doWork request from app");
-    return someExpensiveWork();
+    const result = someExpensiveWork();
+    print("work done!");
+    return result;
   },
 } satisfies Delegate<WorkerMsgHandler>;
 
@@ -55,10 +61,15 @@ print("initialized");
 
 // tell the app we are ready
 async function main() {
-  // in the initial handshake, we don't know if the app has started listening,
-  // so we keep trying until the app calls back
-  let attempt = 1;
+  // According to https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Introducing_workers,
+  // Workers are started as soon as they are created.
+  // So we have this handshake process to ensure we don't miss the ready call
+  // In my testing in both Chrome and Firefox however, the worker does not start
+  // until the current task is finished, but I cannot find any specification/documentation
+  // that guarantees that
+  let attempt = 0;
   while (!isAppReady) {
+    attempt++;
     print("telling app we are ready (attempt " + attempt + ")");
     // we cannot await here, because we might be calling
     // before the app registers the handler,

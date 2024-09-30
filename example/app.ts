@@ -10,14 +10,13 @@ function print(msg: any) {
 }
 
 export async function createWorker(): Promise<WorkerMsgHandlerClient> {
-  print("Creating worker");
+  print("creating worker");
   const worker = new Worker("/dist/worker.js"); // your worker file
   const options = {
     worker,
     useAddEventListener: true,
   };
   const client = new WorkerMsgHandlerClient(options);
-  // after creation, the worker will start executing right away in a separate thread
   // so we need to know when it's ready
   await new Promise<void>((resolve) => {
     const handler = {
@@ -43,6 +42,15 @@ export async function createWorker(): Promise<WorkerMsgHandlerClient> {
 async function main() {
   print("starting");
   const worker = await createWorker();
+
+  setTimeout(() => {
+    // to prove workers are on separate threads
+    // log a message while the worker is synchronously
+    // doing some work
+    print(
+      "if this message is before `work done!`, then worker is on a separate thread",
+    );
+  }, 1000);
 
   const result: WorkexResult<string> = await worker.doWork();
   if (result.val) {
