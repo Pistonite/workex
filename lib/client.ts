@@ -1,13 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Result } from "pure/result";
-import { errstr } from "pure/utils";
+import { errstr, type Result, type Err } from "@pistonite/pure/result";
 
-import type { WorkerLike, WorkexClientOptions, WorkexInternalError, WorkexPromise, WorkexResult } from "./types.ts";
+import type { WorkerLike, WorkexClientOptions, WorkexInternalError, WorkexPromise, WorkexResult, WorkexTimeout } from "./types.ts";
 import { WorkexMessage, WorkexReturnFId, isMessage } from "./utils.ts";
 
 function makeMessageIdGenerator() {
     let nextId = 0;
-    return () => nextId++;
+    return () => {
+        if (nextId >= MAX_MID) {
+            nextId = 0;
+        }
+        return nextId++;
+    }
 }
 
 const MAX_MID = 500000;
@@ -26,6 +30,9 @@ export class WorkexClient<TProto extends string, TFId extends number> {
         this.nextMessageId = options.nextMessageId || makeMessageIdGenerator();
         this.pending = new Map();
         this.timeout = options.timeout || 0;
+        if (this.timeout < 0) {
+            this.timeout = 0;
+        }
         this.protocol = protocol;
         this.stopped = false;
 
@@ -66,9 +73,6 @@ export class WorkexClient<TProto extends string, TFId extends number> {
     private nextMId(): Result<number, WorkexInternalError> {
         const nextMessageId = this.nextMessageId;
         let mId = nextMessageId();
-        if (mId >= MAX_MID) {
-            mId = 0;
-        }
         if (this.pending.has(mId)) {
             let initialMId = mId;
             while (this.pending.has(mId)) {
@@ -84,16 +88,16 @@ export class WorkexClient<TProto extends string, TFId extends number> {
         return { val: mId };
     }
 
-    public post<T>(fId: TFId, args: any[]): Promise<WorkexResult<T>> {
+    public post<T>(fId: TFId, args: any[]): WorkexPromise<T> {
         if (this.stopped) {
             return Promise.resolve({ err: { type: "Catch", message: "Terminated" } });
         }
         try {
             const mId = this.nextMId();
             if (mId.err) {
-                return Promise.resolve(mId.err);
+                return Promise.resolve(mId);
             }
-            const promise = new Promise((resolve) => {
+            const promise = new Promise<WorkexResult<T>>((resolve) => {
                 this.pending.set(mId.val, resolve);
                 this.worker.postMessage({
                     p: this.protocol, 
@@ -103,14 +107,14 @@ export class WorkexClient<TProto extends string, TFId extends number> {
                 } satisfies WorkexMessage<TProto>);
             });
             if (!this.timeout) {
-                return promise;
+                return promise as WorkexPromise<T>;
             }
-            const timeoutPromise = new Promise((resolve) => {
+            const timeoutPromise = new Promise<Err<WorkexTimeout>>((resolve) => {
                 setTimeout(() => {
                     resolve({ err: { type: "Catch", message: "Timeout" }});
                 }, this.timeout);
             });
-            return Promise.race([promise, timeoutPromise]);
+            return Promise.race([promise, timeoutPromise]) as WorkexPromise<T>;
         } catch (e) {
             return Promise.resolve({ err: { type: "InternalError", message: errstr(e) } });
         }

@@ -1,9 +1,11 @@
+//! Parse package from input TypeScript files
+
 use std::collections::BTreeMap;
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 use std::rc::Rc;
 
-use error_stack::ResultExt;
+use error_stack::{report, Result, ResultExt};
 use swc_common::comments::{Comment, CommentKind, SingleThreadedComments};
 use swc_common::errors::Handler;
 use swc_common::sync::Lrc;
@@ -16,26 +18,39 @@ use swc_ecma_parser::lexer::Lexer;
 use swc_ecma_parser::{Parser, StringInput, Syntax};
 
 use crate::{
-    io_err, Arg, CommentBlock, CommentStyle, Function, IOResult, Import, ImportIdent, Interface,
+    Arg, CommentBlock, CommentStyle, Function, Import, ImportIdent, Interface,
     PatchedImports,
 };
 
+/// Errors from parsing inputs
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("Invalid file name")]
+    Filename,
+    #[error("Error loading input file")]
+    LoadFile,
+    #[error("Error parsing input files, please see output above")]
+    Parsing,
+}
+
 /// Parse the interfaces in the inputs
-pub fn parse(inputs: &[String]) -> IOResult<Vec<Interface>> {
-    Parse::new().parse(inputs)
+pub fn parse(inputs: &[String], lib_path: &str) -> Result<Vec<Interface>, Error> {
+    Parse::new().parse(inputs, lib_path)
 }
 
 /// Parse state for input files
 struct Parse {
+    /// SWC source map
     source_map: Lrc<SourceMap>,
+    /// SWC error handler
     handler: Handler,
     /// Output interfaces. Using BTreeMap to keep names sorted
     out: BTreeMap<String, Interface>,
 }
 
-impl Parse {
+impl Default for Parse {
     /// Create a new parser
-    pub fn new() -> Self {
+    fn default() -> Self {
         let source_map: Lrc<SourceMap> = Default::default();
         let handler = Handler::with_tty_emitter(
             swc_common::errors::ColorConfig::Auto,
@@ -51,30 +66,38 @@ impl Parse {
             out,
         }
     }
+}
 
-    pub fn parse(mut self, inputs: &[String]) -> IOResult<Vec<Interface>> {
+impl Parse {
+    /// Create a new parser
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn parse(mut self, inputs: &[String], lib_path: &str) -> Result<Vec<Interface>, Error> {
         let mut errors = 0;
         for input in inputs {
-            errors += ParseFile::try_from(&mut self, input)?.parse_file()?;
+            errors += ParseFile::try_from(&mut self, input, lib_path)?.parse_file()?;
         }
 
         if errors > 0 {
-            return Err(io_err(format!("{errors} errors parsing input files")))?;
+            return Err(report!(Error::Parsing));
         }
 
         Ok(self.out.into_values().collect())
     }
 }
 
-struct ParseFile<'a, 'b> {
+struct ParseFile<'a, 'b, 'c> {
     ctx: &'a mut Parse,
     path: &'b str,
     errors: usize,
     filename: String,
     comments: SingleThreadedComments,
+    lib_path: &'c str,
 }
 
-impl Deref for ParseFile<'_, '_> {
+impl Deref for ParseFile<'_, '_, '_> {
     type Target = Parse;
 
     fn deref(&self) -> &Self::Target {
@@ -82,19 +105,20 @@ impl Deref for ParseFile<'_, '_> {
     }
 }
 
-impl DerefMut for ParseFile<'_, '_> {
+impl DerefMut for ParseFile<'_, '_, '_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.ctx
     }
 }
 
-impl<'a, 'b> ParseFile<'a, 'b> {
-    fn try_from(ctx: &'a mut Parse, path: &'b str) -> IOResult<Self> {
+impl<'a, 'b, 'c> ParseFile<'a, 'b, 'c> {
+    fn try_from(ctx: &'a mut Parse, path: &'b str, lib_path: &'c str) -> Result<Self, Error> {
         let filename = Path::new(path)
             .file_name()
-            .ok_or_else(|| io_err(format!("cannot get filename from input path: {}", path)))?
-            .to_str()
-            .ok_or_else(|| io_err(format!("cannot convert filename to string: {}", path)))?
+            .and_then(|x| x.to_str())
+            .ok_or_else(|| {
+                report!(Error::Filename).attach_printable(format!("Path: {path}"))
+            })?
             .to_string();
 
         Ok(Self {
@@ -103,16 +127,19 @@ impl<'a, 'b> ParseFile<'a, 'b> {
             errors: 0,
             filename,
             comments: SingleThreadedComments::default(),
+            lib_path,
         })
     }
 
-    fn parse_file(mut self) -> IOResult<usize> {
+    /// Parse the file. Returns number of errors, or Err if parsing failed
+    fn parse_file(mut self) -> Result<usize, Error> {
         println!("parsing {}", self.path);
 
         let source_file = self
             .source_map
             .load_file(Path::new(self.path))
-            .attach_printable_lazy(|| format!("cannot load input file: {}", self.path))?;
+            .change_context(Error::LoadFile)
+            .attach_printable_lazy(|| format!("Path: {}", self.path))?;
 
         let lexer = Lexer::new(
             Syntax::Typescript(Default::default()),
@@ -135,21 +162,19 @@ impl<'a, 'b> ParseFile<'a, 'b> {
             has_error = true;
         }
 
-        let module = match result {
+        match result {
             Ok(module) => {
-                if has_error {
-                    return Err(io_err(format!("error parsing input file: {}", self.path)))?;
+                if !has_error {
+                    self.parse_module_body(&module.body);
+                    return Ok(self.errors)
                 }
-                module
             }
             Err(e) => {
                 e.into_diagnostic(&self.handler).emit();
-                return Err(io_err(format!("error parsing input file: {}", self.path)))?;
             }
         };
+        return Err(report!(Error::Parsing).attach_printable(format!("Path: {}", self.path)));
 
-        self.parse_module_body(&module.body);
-        Ok(self.errors)
     }
 
     fn parse_module_body(&mut self, body: &[ModuleItem]) {
@@ -184,7 +209,7 @@ impl<'a, 'b> ParseFile<'a, 'b> {
                     decl: Decl::TsInterface(interface),
                     ..
                 }) => {
-                    let imports = imports.fixed();
+                    let imports = imports.fixed(&self.lib_path);
                     if let Some(interface) = self.parse_interface(imports, interface) {
                         self.out.insert(interface.name.clone(), interface);
                     }
@@ -304,28 +329,28 @@ impl<'a, 'b> ParseFile<'a, 'b> {
     }
 }
 
-struct ParseInterface<'a, 'b, 'c, 'd> {
-    ctx: &'c mut ParseFile<'a, 'b>,
+struct ParseInterface<'a, 'b, 'c, 'd, 'e> {
+    ctx: &'c mut ParseFile<'a, 'b, 'e>,
     functions: BTreeMap<String, Function>,
     interface: &'d mut Interface,
 }
 
-impl<'a, 'b> Deref for ParseInterface<'a, 'b, '_, '_> {
-    type Target = ParseFile<'a, 'b>;
+impl<'a, 'b, 'c> Deref for ParseInterface<'a, 'b, '_, '_, 'c> {
+    type Target = ParseFile<'a, 'b, 'c>;
 
     fn deref(&self) -> &Self::Target {
         self.ctx
     }
 }
 
-impl DerefMut for ParseInterface<'_, '_, '_, '_> {
+impl DerefMut for ParseInterface<'_, '_, '_, '_, '_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.ctx
     }
 }
 
-impl<'a, 'b, 'c, 'd> ParseInterface<'a, 'b, 'c, 'd> {
-    pub fn from(ctx: &'c mut ParseFile<'a, 'b>, interface: &'d mut Interface) -> Self {
+impl<'a, 'b, 'c, 'd, 'e> ParseInterface<'a, 'b, 'c, 'd, 'e> {
+    pub fn from(ctx: &'c mut ParseFile<'a, 'b, 'e>, interface: &'d mut Interface) -> Self {
         Self {
             ctx,
             functions: BTreeMap::new(),
@@ -395,9 +420,7 @@ impl<'a, 'b, 'c, 'd> ParseInterface<'a, 'b, 'c, 'd> {
             }
         };
         let workex_promise_ident = self.interface.imports.send.workex_promise_ident.clone();
-        let not_promise_message = || {
-            format!("return type must be a {workex_promise_ident}. You might need to import it from \"workex\". See README for more info.")
-        };
+        let not_promise_message = format!("return type must be a {workex_promise_ident}. You might need to import it from \"{}\". See README for more info.", self.lib_path);
         let return_param = match return_type.type_ann.as_ref() {
             TsType::TsTypeRef(x) => {
                 match &x.type_name {
@@ -405,7 +428,7 @@ impl<'a, 'b, 'c, 'd> ParseInterface<'a, 'b, 'c, 'd> {
                         // ok
                     }
                     _ => {
-                        self.emit_error(x.span, not_promise_message());
+                        self.emit_error(x.span, not_promise_message);
                         return None;
                     }
                 };
@@ -432,7 +455,7 @@ impl<'a, 'b, 'c, 'd> ParseInterface<'a, 'b, 'c, 'd> {
                 }
             }
             _ => {
-                self.emit_error(return_type.span, not_promise_message());
+                self.emit_error(return_type.span, not_promise_message);
                 return None;
             }
         };
@@ -569,10 +592,10 @@ impl ParseImportState {
         }
     }
 
-    pub fn fixed(&mut self) -> Rc<PatchedImports> {
+    pub fn fixed(&mut self, lib_path: &str) -> Rc<PatchedImports> {
         match self {
             Self::Importing(x) => {
-                let rc = Rc::new(std::mem::take(x).into());
+                let rc = Rc::new(PatchedImports::from_imports(std::mem::take(x), lib_path));
                 *self = Self::Fixed(Rc::clone(&rc));
                 rc
             }

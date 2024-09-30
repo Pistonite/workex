@@ -1,6 +1,6 @@
 //! Module comment
-import { Result } from "pure/result";
-import { WorkexPromise as Promise } from "workex";
+import { Result } from "@pistonite/pure/result";
+import { WorkexPromise as Promise } from "./workex";
 
 /**
  * My interface for testing
@@ -17,6 +17,13 @@ export interface TestFoo {
      * buz
      */
     terminate_(a: number, b: number, c?: number): Promise<string>;
+}
+
+export interface Bar {
+    /** 
+     * buz
+     */
+    doSomething(a: number, c?: number | undefined): Promise<string>;
 }
 
 // This is not included because it is a type

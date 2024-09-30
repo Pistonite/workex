@@ -6,8 +6,10 @@ use codize::{cblock, cconcat, clist, Code};
 pub struct Package {
     /// All interfaces in the package, sorted by name
     pub interfaces: Vec<Interface>,
-    /// Protocol expression for the package (from the CLI input)
+    /// Protocol expression for the package (from CLI input)
     pub protocol: String,
+    /// Path to import workex from (from CLI input)
+    pub lib_path: String,
     /// Output directory for the generated files (inferred from input files)
     pub out_dir: PathBuf,
 }
@@ -56,22 +58,13 @@ impl Interface {
 
 #[derive(Debug)]
 pub struct PatchedImports {
-    pub original: Vec<Import>,
     pub send: PatchedSendImports,
 }
 
-impl From<Vec<Import>> for PatchedImports {
-    #[inline]
-    fn from(imports: Vec<Import>) -> Self {
-        Self::from_imports(imports)
-    }
-}
-
 impl PatchedImports {
-    pub fn from_imports(imports: Vec<Import>) -> Self {
-        let send = Self::make_send_imports(&imports);
+    pub fn from_imports(imports: Vec<Import>, lib_path: &str) -> Self {
+        let send = Self::make_send_imports(imports, lib_path);
         Self {
-            original: imports,
             send,
         }
     }
@@ -79,9 +72,8 @@ impl PatchedImports {
     /// - WorkexClient
     /// - WorkexClientOptions
     /// - WorkexPromise
-    fn make_send_imports(imports: &[Import]) -> PatchedSendImports {
-        let mut imports = imports.to_vec();
-        let idents = match imports.iter_mut().find(|x| x.is_workex()) {
+    fn make_send_imports(mut imports: Vec<Import>, lib_path: &str) -> PatchedSendImports {
+        let idents = match imports.iter_mut().find(|x| x.is_workex(lib_path)) {
             Some(Import::Import {
                 is_type, idents, ..
             }) => {
@@ -104,7 +96,7 @@ impl PatchedImports {
                         ImportIdent::workex_client_options(),
                         ImportIdent::workex_promise(),
                     ],
-                    from: "workex".to_string(),
+                    from: lib_path.to_string(),
                 });
                 return PatchedSendImports {
                     workex_promise_ident: "WorkexPromise".to_string(),
@@ -183,11 +175,12 @@ fn should_inline_import_list(x: &codize::List) -> bool {
 }
 
 impl Import {
-    /// Return if this import is `import type? { ... } from "workex"`
-    pub fn is_workex(&self) -> bool {
+    /// Return if this import is `import type? { ... } from "WORKEX"`,
+    /// where WORKEX is the library path from CLI
+    pub fn is_workex(&self, lib_path: &str) -> bool {
         match self {
             Self::Opaque(_) => false,
-            Self::Import { from, .. } => from == "workex",
+            Self::Import { from, .. } => from == lib_path
         }
     }
     /// Emit code for this import
@@ -406,9 +399,4 @@ impl Arg {
 
         format!("{}: {}", ident_part, self.type_)
     }
-}
-
-pub type IOResult<T> = error_stack::Result<T, std::io::Error>;
-pub fn io_err<T: Into<String>>(msg: T) -> std::io::Error {
-    std::io::Error::new(std::io::ErrorKind::Other, msg.into())
 }

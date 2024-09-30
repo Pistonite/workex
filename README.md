@@ -4,17 +4,8 @@ Worker Exchange. The In-house messaging bindgen library for workers/windows.
 ## Setup
 This library depends on [pure](https://github.com/Pistonite/pure), the in-house TypeScript utility library.
 
-Both `pure` and `workex` should be consumed as git submodules, and the `tsconfig.json` should include:
-```json
-{
-    "compilerOptions": {
-        "paths": {
-            "pure/*": ["base/rel/path/to/pure/*"],
-            "workex": ["base/rel/path/to/workex/lib"],
-        }
-    },
-    "include": ["path/that/includes/the/libraries"]
-}
+```bash
+npx jsr install @pistonite/pure
 ```
 
 Then, install the bindgen tool with

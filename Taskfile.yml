@@ -13,3 +13,9 @@ tasks:
     desc: Run formatter
     cmds:
     - cargo fmt
+
+  run:
+    desc: Run with test inputs
+    cmds:
+    - cargo run -- -p testproto test/input.ts test/Bar.ts
+    - npx tsc

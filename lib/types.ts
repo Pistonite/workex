@@ -1,22 +1,39 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Result, VoidResult } from "pure/result";
+/**
+ * Types for workex
+ */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Err, Ok, Result, Void, VoidOk } from "@pistonite/pure/result";
+
+/** An error caught by a try-catch */
 export type WorkexCatch = {
     type: "Catch";
     message: string;
 };
 
+/** A timeout error */
+export type WorkexTimeout = {
+    type: "Catch";
+    message: "Timeout";
+}
+
+/** An internal error to workex - likely caused by a bug */
 export type WorkexInternalError = {
     type: "InternalError";
     message: string;
 };
 
+/** Any error that can be returned by workex */
 export type WorkexError = WorkexCatch | WorkexInternalError;
 
+/** Result type wrapper */
 export type WorkexResult<T> = Result<T, WorkexError>;
-export type WorkexVoid = VoidResult<WorkexError>;
-export type WorkexPromise<T> = T extends void ? Promise<WorkexVoid> : Promise<WorkexResult<T>>;
+/** Void Result type wrapper */
+export type WorkexVoid = Void<WorkexError>;
+/** Promise type wrapper, mainly to make it easier for codegen to produce types */
+export type WorkexPromise<T> = Promise<(T extends void ? VoidOk : Ok<T>) | Err<WorkexError>>;
 
+/** Anything that resembles a worker */
 export type WorkerLike = {
     postMessage: (message: any) => any;
     onmessage?: (message: any) => any;
@@ -24,24 +41,33 @@ export type WorkerLike = {
     terminate?: () => void;
 };
 
+/** Options for workex */
 export type WorkexCommonOptions = {
-    /// The worker to bind to the host
+    /** The worker to bind to the host */
     worker: WorkerLike;
 
-    /// Set to true to use addEventListener instead of onmessage for setting up the worker.
-    /// default is false
+    /**
+     * Set to true to use addEventListener instead of onmessage for setting up the worker.
+     * default is false
+     */
     useAddEventListener?: boolean;
 };
 
+/** Options when constructing a client */
 export type WorkexClientOptions = WorkexCommonOptions & {
 
-    /// Timeout for each request in milliseconds.
-    /// default or 0 is no timeout
+    /**
+     * Timeout for each request in milliseconds.
+     * default or 0 is no timeout
+     */
     timeout?: number;
 
-    /// Supply a custom message id generator
-    /// useful if the same worker is being shared by multiple clients
+    /**
+     * Supply a custom message id generator
+     * useful if the same worker is being shared by multiple clients
+     */
     nextMessageId?: () => number;
 };
 
+/** Options when binding a host */
 export type WorkexBindOptions = WorkexCommonOptions;

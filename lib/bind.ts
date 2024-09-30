@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { errstr } from "pure/utils";
+import { errstr } from "@pistonite/pure/result";
 
 import type { WorkexBindOptions } from "./types.ts";
 import { WorkexCatchFId, type WorkexMessage, WorkexReturnFId, isMessage } from "./utils.ts";
@@ -42,9 +41,9 @@ export function bindHost<TProto extends string, TFIds>(
         }
     };
 
-    if (options.useAddEventListener && this.worker.addEventListener) {
-        this.worker.addEventListener("message", requestHandler);
+    if (options.useAddEventListener && worker.addEventListener) {
+        worker.addEventListener("message", requestHandler);
     } else {
-        this.worker.onmessage = requestHandler;
+        worker.onmessage = requestHandler;
     }
 }
