@@ -44,16 +44,6 @@ impl Interface {
             functions: Vec::new(),
         }
     }
-    pub fn to_funcid_set(&self, set_ident: &str, funcid_enum: &str) -> Code {
-        cblock! {
-            format!("const {set_ident} = new Set<{funcid_enum}>(["),
-            [clist!("," => self.functions.iter().map(|f| {
-                format!("{funcid_enum}.{}_{}", self.name, f.name)
-            }))],
-            "]);"
-        }
-        .into()
-    }
 }
 
 #[derive(Debug)]
@@ -64,9 +54,7 @@ pub struct PatchedImports {
 impl PatchedImports {
     pub fn from_imports(imports: Vec<Import>, lib_path: &str) -> Self {
         let send = Self::make_send_imports(imports, lib_path);
-        Self {
-            send,
-        }
+        Self { send }
     }
     /// Patch the original imports to include the Workex imports for send if not already included
     /// - WorkexClient
@@ -180,7 +168,7 @@ impl Import {
     pub fn is_workex(&self, lib_path: &str) -> bool {
         match self {
             Self::Opaque(_) => false,
-            Self::Import { from, .. } => from == lib_path
+            Self::Import { from, .. } => from == lib_path,
         }
     }
     /// Emit code for this import

@@ -77,20 +77,18 @@ struct Cli {
 fn get_out_dir(inputs: &[String]) -> Result<PathBuf, Error> {
     let out_dir = match inputs.first() {
         None => {
-            return Err(report!(Error::InvalidArg))
-            .attach_printable("No input files provided");
+            return Err(report!(Error::InvalidArg)).attach_printable("No input files provided");
         }
         Some(path) => get_parent_dir(path)?,
     };
     for input in inputs.iter().skip(1) {
         let path = get_parent_dir(input)?;
         if path != out_dir {
-            return Err(report!(Error::InvalidArg))
-                .attach_printable(format!(
-                    "Input files are not in the same directory: {} and {}",
-                    out_dir.display(),
-                    path.display()
-                ));
+            return Err(report!(Error::InvalidArg)).attach_printable(format!(
+                "Input files are not in the same directory: {} and {}",
+                out_dir.display(),
+                path.display()
+            ));
         }
     }
     Ok(out_dir)
@@ -101,17 +99,14 @@ fn get_parent_dir(path: &str) -> Result<PathBuf, Error> {
 
     if !p.exists() {
         return Err(report!(Error::InvalidArg))
-            .attach_printable(format!(
-            "Input file does not exist: {}",
-            path
-        ));
+            .attach_printable(format!("Input file does not exist: {}", path));
     }
 
-    let parent = p.parent()
-        .ok_or_else(|| {
-            report!(Error::InvalidArg).attach_printable("Input file has no parent.")
-        })?;
+    let parent = p
+        .parent()
+        .ok_or_else(|| report!(Error::InvalidArg).attach_printable("Input file has no parent."))?;
 
-    dunce::canonicalize(parent).change_context_lazy(|| Error::InvalidArg)
-    .attach_printable_lazy(|| format!("Failed to canonicalize {}", parent.display()))
+    dunce::canonicalize(parent)
+        .change_context_lazy(|| Error::InvalidArg)
+        .attach_printable_lazy(|| format!("Failed to canonicalize {}", parent.display()))
 }

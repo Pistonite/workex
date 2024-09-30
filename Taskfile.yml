@@ -1,21 +1,49 @@
 version: '3'
 
 tasks:
+  install:
+    desc: Install dependencies
+    cmds:
+      - bun install
+      - cargo install txtpp
+
   check:
     desc: Check for issues
     vars:
       CLIPPY_ARGS: -D warnings -D clippy::todo
     cmds:
-    - cargo clippy --all-features --all-targets -- {{.CLIPPY_ARGS}}
-    - cargo fmt --check
+      - cargo clippy --all-features --all-targets -- {{.CLIPPY_ARGS}}
+      - cargo fmt --check
 
   fix:
     desc: Run formatter
     cmds:
-    - cargo fmt
+      - cargo fmt
 
   run:
     desc: Run with test inputs
     cmds:
-    - cargo run -- -p testproto test/input.ts test/Bar.ts
-    - npx tsc
+      - cargo run -- -p testproto test/input.ts test/Bar.ts
+      - bunx tsc
+
+  example:
+    desc: Build example
+    cmds:
+      - cargo run -- -p app example/proto.ts
+      - bunx tsc
+      - mkdir -p example/dist
+      - bun build example/app.ts --outfile example/dist/app.js --minify
+      - bun build example/worker.ts --outfile example/dist/worker.js --minify
+      - bunx serve example
+
+  doc:
+    desc: Generate README documentation
+    cmds:
+      - bunx prettier lib --write
+      - bunx prettier doc --write
+      - bunx prettier example --write
+      - txtpp doc -r
+      - cp doc/README.md README.md
+
+
+

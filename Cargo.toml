@@ -1,6 +1,6 @@
 [package]
 name = "workex"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 description = "In-house messaging bindgen library for workers/windows"
 repository = "https://github.com/Pistonite/workex"
@@ -13,7 +13,7 @@ exclude = [
 ]
 
 [dependencies]
-clap = { version = "4.5.4", features = ["derive"] }
+clap = { version = "=4.5.4", features = ["derive"] }
 codize = "0.3.1"
 dunce = "1.0.5"
 error-stack = "0.4.1"

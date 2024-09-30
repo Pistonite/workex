@@ -18,8 +18,7 @@ use swc_ecma_parser::lexer::Lexer;
 use swc_ecma_parser::{Parser, StringInput, Syntax};
 
 use crate::{
-    Arg, CommentBlock, CommentStyle, Function, Import, ImportIdent, Interface,
-    PatchedImports,
+    Arg, CommentBlock, CommentStyle, Function, Import, ImportIdent, Interface, PatchedImports,
 };
 
 /// Errors from parsing inputs
@@ -116,10 +115,13 @@ impl<'a, 'b, 'c> ParseFile<'a, 'b, 'c> {
         let filename = Path::new(path)
             .file_name()
             .and_then(|x| x.to_str())
-            .ok_or_else(|| {
-                report!(Error::Filename).attach_printable(format!("Path: {path}"))
-            })?
+            .ok_or_else(|| report!(Error::Filename).attach_printable(format!("Path: {path}")))?
             .to_string();
+
+        if filename.ends_with("recv.ts") || filename.ends_with("send.ts") {
+            return Err(report!(Error::Filename).attach_printable(format!("Path: {path}")))
+            .attach_printable("File name cannot end with `recv.ts` or `send.ts` as they are reserved for output files");
+        }
 
         Ok(Self {
             ctx,
@@ -166,15 +168,14 @@ impl<'a, 'b, 'c> ParseFile<'a, 'b, 'c> {
             Ok(module) => {
                 if !has_error {
                     self.parse_module_body(&module.body);
-                    return Ok(self.errors)
+                    return Ok(self.errors);
                 }
             }
             Err(e) => {
                 e.into_diagnostic(&self.handler).emit();
             }
         };
-        return Err(report!(Error::Parsing).attach_printable(format!("Path: {}", self.path)));
-
+        Err(report!(Error::Parsing).attach_printable(format!("Path: {}", self.path)))
     }
 
     fn parse_module_body(&mut self, body: &[ModuleItem]) {
@@ -209,7 +210,7 @@ impl<'a, 'b, 'c> ParseFile<'a, 'b, 'c> {
                     decl: Decl::TsInterface(interface),
                     ..
                 }) => {
-                    let imports = imports.fixed(&self.lib_path);
+                    let imports = imports.fixed(self.lib_path);
                     if let Some(interface) = self.parse_interface(imports, interface) {
                         self.out.insert(interface.name.clone(), interface);
                     }

@@ -3,3 +3,4 @@ recv.ts
 *.send.ts
 *.recv.ts
 /workex
+/dist
