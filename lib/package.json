@@ -1,0 +1,11 @@
+{
+    "devDependencies": {
+        "@pistonite/pure": "npm:@jsr/pistonite__pure",
+        "prettier": "^3.4.2",
+        "typescript": "^5.7.2"
+    },
+    "prettier": {
+        "tabWidth": 4,
+        "endOfLine": "auto"
+    }
+}

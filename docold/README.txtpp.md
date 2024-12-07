@@ -18,6 +18,9 @@ Then, install the bindgen tool with
 cargo install --git https://github.com/Pistonite/workex
 ```
 
+All runtime dependencies are generated directly in your project when you run workex.
+This ensures the generated code is always compatible with the workex library.
+
 ## Usage
 
 The command line usage is

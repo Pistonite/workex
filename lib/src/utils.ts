@@ -2,10 +2,14 @@
  * Internal utilities for workex
  */
 
+// 0-15 are reserved function IDs for workex
+
 /** FId for a return value for success */
 export const WorkexReturnFId = 0 as const;
 /** FId for a return value for catch */
-export const WorkexCatchFId = -1 as const;
+export const WorkexCatchFId = 1 as const;
+
+export const WorkexHandshakeFId = 2 as const;
 
 /** A message sent between the worker and the host */
 export type WorkexMessage<TProto extends string> = {

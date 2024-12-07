@@ -19,7 +19,7 @@ export type WorkexTimeout = {
 
 /** An internal error to workex - likely caused by a bug */
 export type WorkexInternalError = {
-  type: "InternalError";
+  type: "Internal";
   message: string;
 };
 
@@ -49,10 +49,15 @@ export type WorkexCommonOptions = {
   worker: WorkerLike;
 
   /**
-   * Set to true to use addEventListener instead of onmessage for setting up the worker.
-   * default is false
+   * Set to true to assign the handler to onmessage directly
+   * instead of calling addEventListener. Note that the worker
+   * must have `addEventListener` defined if false. Otherwise
+   * it will fallback to assigning to `onmessage`.
+   *
+   * When you need to send messages in both directions,
+   * this must be set to false
    */
-  useAddEventListener?: boolean;
+  assign?: boolean;
 };
 
 /** Options when constructing a client */

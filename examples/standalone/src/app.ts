@@ -1,4 +1,3 @@
-// file: example/app.ts
 import { hostFromDelegate, type Delegate, type WorkexResult } from "./workex";
 import { bindAppMsgHandlerHost } from "./AppMsgHandler.recv.ts";
 import { WorkerMsgHandlerClient } from "./WorkerMsgHandler.send.ts";

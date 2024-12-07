@@ -1,0 +1,12 @@
+version: '3'
+
+tasks:
+  run:
+    desc: Build and serve the example
+    cmds:
+      - cargo run -- -p app proto.ts
+      # - bunx tsc
+      # - mkdir -p example/dist
+      # - bun build app.ts --outfile dist/app.js --minify
+      # - bun build worker.ts --outfile dist/worker.js --minify
+      # - bunx serve example

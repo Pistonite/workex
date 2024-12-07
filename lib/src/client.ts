@@ -71,7 +71,7 @@ export class WorkexClient<TProto extends string> {
       }
     };
 
-    if (options.useAddEventListener && this.worker.addEventListener) {
+    if (!options.assign && this.worker.addEventListener) {
       this.worker.addEventListener("message", responseHandler);
     } else {
       this.worker.onmessage = responseHandler;
@@ -88,7 +88,7 @@ export class WorkexClient<TProto extends string> {
         if (mId === initialMId) {
           return {
             err: {
-              type: "InternalError",
+              type: "Internal",
               message: "No available message id",
             },
           };
@@ -127,7 +127,7 @@ export class WorkexClient<TProto extends string> {
       return Promise.race([promise, timeoutPromise]) as WorkexPromise<T>;
     } catch (e) {
       return Promise.resolve({
-        err: { type: "InternalError", message: errstr(e) },
+        err: { type: "Internal", message: errstr(e) },
       });
     }
   }
