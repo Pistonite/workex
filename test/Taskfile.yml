@@ -9,5 +9,5 @@ tasks:
 
   ci:
     cmds:
-      - npm ci
+      - npm install
     
