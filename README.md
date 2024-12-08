@@ -6,5 +6,5 @@
 
 Worker Exchange. The In-house messaging bindgen library for workers/windows.
 
-See workex.pistonite.dev
+See https://workex.pistonite.dev
 
