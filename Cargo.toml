@@ -1,13 +1,14 @@
 [package]
 name = "workex"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 description = "In-house messaging bindgen library for workers/windows"
 repository = "https://github.com/Pistonite/workex"
 license = "MIT"
-authors = ["Pistonight <terrabyte100k@gmail.com>"]
+authors = ["Pistonight <pistonknight@outlook.com>"]
 exclude = [
     "lib/**/*",
+    "examples/**/*",
     "Taskfile.yml",
     "test/**/*",
 ]
@@ -17,6 +18,7 @@ clap = { version = "=4.5.4", features = ["derive"] }
 codize = "0.3.1"
 dunce = "1.0.5"
 error-stack = "0.4.1"
+pathdiff = "0.2.3"
 swc_common = { version = "0.40.0", features = ["tty-emitter"] }
 swc_core = { version = "0.106.0", features = ["ecma_ast"] }
 swc_ecma_parser = "0.152.0"

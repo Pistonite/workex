@@ -207,11 +207,12 @@ impl<'a, 'b, 'c> ParseFile<'a, 'b, 'c> {
                 }
                 // export interface
                 ModuleDecl::ExportDecl(ExportDecl {
+                    span,
                     decl: Decl::TsInterface(interface),
                     ..
                 }) => {
                     let imports = imports.fixed(self.lib_path);
-                    if let Some(interface) = self.parse_interface(imports, interface) {
+                    if let Some(interface) = self.parse_interface(imports, interface, span.lo()) {
                         self.out.insert(interface.name.clone(), interface);
                     }
                 }
@@ -295,6 +296,7 @@ impl<'a, 'b, 'c> ParseFile<'a, 'b, 'c> {
         &mut self,
         imports: Rc<PatchedImports>,
         interface: &TsInterfaceDecl,
+        export_pos: BytePos,
     ) -> Option<Interface> {
         if interface.type_params.is_some() {
             self.emit_error(
@@ -308,7 +310,7 @@ impl<'a, 'b, 'c> ParseFile<'a, 'b, 'c> {
             return None;
         }
         let name = interface.id.sym.to_string();
-        let comment = self.parse_comments_at_pos(interface.span.lo());
+        let comment = self.parse_comments_at_pos(export_pos);
         let mut output = Interface::new(name, self.filename.clone(), comment, imports);
 
         ParseInterface::from(self, &mut output).parse(&interface.body.body);
@@ -473,8 +475,8 @@ impl<'a, 'b, 'c, 'd, 'e> ParseInterface<'a, 'b, 'c, 'd, 'e> {
                 return None;
             }
         };
-        if name == "terminate" {
-            self.emit_error(method.span, "method name `terminate` is reserved");
+        if name == "terminate" || name == "protocol" || name == "handshake" {
+            self.emit_error(method.span, format!("method name `{}` is reserved", name));
             return None;
         }
         Some(Function {
@@ -558,7 +560,8 @@ fn parse_comment(comments: &[Comment]) -> Option<CommentBlock> {
 fn add_comment(comment: &Comment, out: &mut Vec<String>) {
     let lines = comment.text.lines().map(|line| {
         // trim !, / or * from the start of the line
-        let line = line.trim_start_matches(|c| c == '!' || c == '/' || c == '*');
+        let line = line
+            .trim_start_matches(|c: char| c == '!' || c == '/' || c == '*' || c.is_whitespace());
         // remove whitespaces
         line.trim().to_string()
     });
