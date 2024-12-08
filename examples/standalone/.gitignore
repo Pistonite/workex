@@ -1,6 +1,2 @@
-send.ts
-recv.ts
-*.send.ts
-*.recv.ts
-/workex
-/dist
+/dist/
+/node_modules/

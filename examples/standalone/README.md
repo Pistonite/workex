@@ -1,4 +1,6 @@
+# Example: Standalone
 This example shows how to use the library
-with vanilla JS and a build tool like `bun`
+with vanilla HTML + JS using TypeScript and a build tool like `bun`
 
-See `Taskfile.yml` for the commands needed to run the example.
+First install the packages with `bun install`, then,
+see `Taskfile.yml` for the commands needed to run the example.

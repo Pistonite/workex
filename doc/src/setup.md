@@ -1,13 +1,10 @@
 # Setup
-Currently, Workex depends on [pure](https://github.com/Pistonite/pure), the in-house TypeScript utility library,
-to use the `Result` type and some util functions. This dependency might be removed
-in the future.
+The library works as follows:
+- You define the messaging protocol as TypeScript interfaces
+- Run the CLI tool to generate code in your project
+- Use the code!
 
-```bash
-npx jsr install @pistonite/pure
-```
-
-Then, install the CLI tool with
+To get started, install the CLI tool with
 
 ```
 cargo install --git https://github.com/Pistonite/workex

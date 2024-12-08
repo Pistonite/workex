@@ -1,5 +1,2 @@
-send.ts
-recv.ts
-*.send.ts
-*.recv.ts
-/workex
+/node_modules/
+/package-lock.json

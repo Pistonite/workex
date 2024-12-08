@@ -20,6 +20,11 @@ The web worker:
 - Signals the web application that it's ready
 - Handles the function call from the web application
 
+```admonish tip
+The example uses `bun` as a build tool. Run `bun install`
+to set up the dependencies
+```
+
 ## Run Workex
 
 The interface can be defined as
@@ -42,11 +47,48 @@ If you don't have `workex` installed yet, use `cargo run --` instead.
 ## The Worker Side
 See the comments in the code that walks through the implementation
 ```typescript
+// src/worker.ts
 //TXTPP#include ../../examples/standalone/src/worker.ts
 ```
 
 ## The Web App Side
 See the comments in the code that walks through the implementation
 ```typescript
+// src/app.ts
 //TXTPP#include ../../examples/standalone/src/app.ts
+```
+## Run the Example
+First let's do a type check with `tsc`
+
+```bash
+bunx tsc
+```
+
+Then, build the project
+
+```bash
+mkdir -p dist
+bun build src/app.ts --outfile dist/app.js --minify
+bun build src/worker.ts --outfile dist/worker.js --minify
+```
+
+Finally, serve the project
+
+```bash
+bunx serve .
+```
+
+Open the served page in the browser and open the console. You should see the message exchange
+working as expected!
+```
+app: starting
+app: creating worker
+app: waiting for handshake to be established
+worker: started
+app: worker ready
+worker: received doWork request from app
+app: if this message is before `work done!`, then worker is on a separate thread
+worker: work done!
+app: worker returned:Hello from worker!
+app: terminating worker
 ```

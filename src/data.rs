@@ -1,15 +1,71 @@
-use std::{path::PathBuf, rc::Rc};
+use std::path::PathBuf;
+use std::rc::Rc;
 
+use clap::Parser;
 use codize::{cblock, cconcat, clist, Code};
+
+#[derive(Debug, Parser)]
+#[command(author, about, version, arg_required_else_help(true))]
+pub struct CliOptions {
+    /// Input TypeScript files with `export interface` declarations
+    ///
+    /// The input files must be in the same directory, which will also be
+    /// used as the output directory.
+    pub inputs: Vec<String>,
+
+    /// A string that will be used as the protocol identifier.
+    #[clap(short, long)]
+    pub protocol: String,
+
+    /// Path to import workex from. The SDK library will be emitted
+    /// to this directory.
+    ///
+    /// It should start with "./" or "../" and be a relative path.
+    #[clap(short, long, default_value = "./workex")]
+    pub lib_path: String,
+
+    /// Keep the library directory if it already exists.
+    ///
+    /// Use this if you need to modify the workex library yourself. Note
+    /// that major update in the future could break the compatibility.
+    ///
+    /// If you need to use this, you should probably also use --no-gitignore
+    /// to not generate the gitignore file, and commit your version of the workex
+    /// library
+    #[clap(long)]
+    pub keep_lib: bool,
+
+    /// Do not emit the workex library.
+    ///
+    /// Use this in conjunction with --lib-path to use an existing workex library.
+    /// This is useful when you have multiple workex calls for different protocols
+    /// and want to use the same library for both
+    #[clap(long)]
+    pub no_lib: bool,
+
+    /// Do not generate the .gitignore file
+    #[clap(long)]
+    pub no_gitignore: bool,
+
+    /// Suffix for the sender-side class name
+    ///
+    /// For example, if this is set to `Client`, the generated sender class
+    /// for `Foo` interface will be `FooClient`.
+    #[clap(long, default_value = "Client")]
+    pub send_suffix: String,
+
+    /// Suffix for the receiver-side function name
+    ///
+    /// For example, if this is set to `Host`, the generated receiver bind function
+    /// for `Foo` interface will be `bindFooHost`.
+    #[clap(long, default_value = "Host")]
+    pub recv_suffix: String,
+}
 
 #[derive(Debug)]
 pub struct Package {
     /// All interfaces in the package, sorted by name
     pub interfaces: Vec<Interface>,
-    /// Protocol expression for the package (from CLI input)
-    pub protocol: String,
-    /// Path to import workex from (from CLI input)
-    pub lib_path: String,
     /// Output directory for the generated files (inferred from input files)
     pub out_dir: PathBuf,
 }
@@ -18,6 +74,14 @@ pub struct Package {
 pub struct Interface {
     /// The name for this interface
     pub name: String,
+    /// Identifier for the side where this interface is used to send messages
+    ///
+    /// Parsed from the @workex:send annotation in the comment block.
+    pub send_sides: Vec<String>,
+    /// Identifier for the side where this interface is used to receive messages
+    ///
+    /// Parsed from the @workex:recv annotation in the comment block.
+    pub recv_sides: Vec<String>,
     /// File name where the interface is defined, including the extension.
     /// This is for generating the `import` statements to import this interface
     pub filename: String,
@@ -36,8 +100,11 @@ impl Interface {
         comment: CommentBlock,
         imports: Rc<PatchedImports>,
     ) -> Self {
+        let (send_sides, recv_sides) = comment.parse_side_annotations();
         Self {
             name,
+            send_sides,
+            recv_sides,
             filename,
             comment,
             imports,
@@ -63,7 +130,7 @@ impl PatchedImports {
     fn make_send_imports(mut imports: Vec<Import>, lib_path: &str) -> PatchedSendImports {
         let idents = match imports.iter_mut().find(|x| x.is_workex(lib_path)) {
             Some(Import::Import {
-                is_type, idents, ..
+                is_type, idents, from, ..
             }) => {
                 // turn off type import on the outer level
                 // since we need to add the WorkexClient import
@@ -73,6 +140,8 @@ impl PatchedImports {
                         ident.is_type = true;
                     }
                 }
+                // fix the from path to be from parent
+                *from = format!("../{}", from);
                 idents
             }
             _ => {
@@ -84,7 +153,7 @@ impl PatchedImports {
                         ImportIdent::workex_client_options(),
                         ImportIdent::workex_promise(),
                     ],
-                    from: lib_path.to_string(),
+                    from: format!("../{}", lib_path),
                 });
                 return PatchedSendImports {
                     workex_promise_ident: "WorkexPromise".to_string(),
@@ -172,7 +241,7 @@ impl Import {
         }
     }
     /// Emit code for this import
-    pub fn to_code(&self) -> Code {
+    pub fn to_code(&self, path_prefix: Option<&str>) -> Code {
         match self {
             Self::Opaque(s) => s.to_string().into(),
             Self::Import { is_type, idents, from } => {
@@ -181,7 +250,7 @@ impl Import {
                     [
                     clist!("," => idents.iter().map(|x| x.to_repr())).inline_when(should_inline_import_list)
                 ],
-                    format!("}} from \"{}\";", from)
+                    format!("}} from \"{}{}\";", path_prefix.unwrap_or_default(), from)
                 }.into()
             }
         }
@@ -321,7 +390,7 @@ impl Function {
 }
 
 /// A block on comments
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CommentBlock {
     /// The style of the comment block
     pub style: CommentStyle,
@@ -329,16 +398,29 @@ pub struct CommentBlock {
     pub lines: Vec<String>,
 }
 
-impl Default for CommentBlock {
-    fn default() -> Self {
-        Self {
-            style: CommentStyle::TripleSlash,
-            lines: Vec::new(),
-        }
-    }
-}
-
 impl CommentBlock {
+    /// Parse the @workex:send and @workex:recv annotations from the comment block
+    pub fn parse_side_annotations(&self) -> (Vec<String>, Vec<String>) {
+        let mut send_side = vec![];
+        let mut recv_side = vec![];
+
+        for line in &self.lines {
+            let line = line.trim();
+            if let Some(send) = line.strip_prefix("@workex:send ") {
+                let send = send.trim();
+                if !send.is_empty() {
+                    send_side.push(send.to_string());
+                }
+            } else if let Some(recv) = line.strip_prefix("@workex:recv ") {
+                let recv = recv.trim();
+                if !recv.is_empty() {
+                    recv_side.push(recv.to_string());
+                }
+            }
+        }
+
+        (send_side, recv_side)
+    }
     pub fn to_code(&self) -> Code {
         match self.style {
             CommentStyle::TripleSlash => {
@@ -361,10 +443,11 @@ impl CommentBlock {
 }
 
 /// Style of a comment block
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CommentStyle {
     /// `///` comments
     TripleSlash,
+    #[default]
     /// `/** ... */` comments
     JsDoc,
 }

@@ -4,7 +4,7 @@ use std::path::Path;
 use codize::{cblock, cconcat, Concat};
 use error_stack::{Result, ResultExt};
 
-use crate::{Interface, Package};
+use crate::{CliOptions, Interface, Package};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -19,81 +19,117 @@ fn header() -> Concat {
         " *",
         " * DO NOT EDIT",
         " */",
-        "/* eslint-disable */",
     ]
 }
 
 /// Emit the output
-pub fn emit(pkg: &Package) -> Result<(), Error> {
+pub fn emit(pkg: &Package, cli: &CliOptions) -> Result<(), Error> {
     let out_dir = &pkg.out_dir;
 
-    emit_sdk(pkg)?;
-    let func_map = make_protocol(pkg);
-    emit_index(pkg, out_dir)?;
+    if cli.no_lib {
+        println!("not emitting workex library because --no-lib is used");
+    } else {
+        emit_library(pkg, cli)?;
+    }
+    let func_map = make_func_id_map(pkg);
+    emit_sides(pkg, out_dir)?;
+
+    let interfaces_dir = out_dir.join("interfaces");
+    if interfaces_dir.exists() {
+        std::fs::remove_dir_all(&interfaces_dir).change_context(Error::IO)?;
+    }
+    std::fs::create_dir_all(&interfaces_dir).change_context(Error::IO)?;
 
     for interface in &pkg.interfaces {
-        emit_interface_send(interface, &func_map, out_dir, &pkg.protocol)?;
-        emit_interface_recv(interface, &func_map, out_dir, &pkg.protocol, &pkg.lib_path)?;
+        emit_interface_send(interface, &func_map, &interfaces_dir, &cli)?;
+        emit_interface_recv(interface, &func_map, &interfaces_dir, &cli)?;
+    }
+
+    if cli.no_gitignore {
+        println!("not emitting .gitignore because --no-gitignore is used");
+    } else {
+        emit_gitignore(out_dir, cli)?;
     }
 
     Ok(())
 }
 
-macro_rules! emit_sdk_file {
+macro_rules! emit_lib_file {
     ($out_dir:ident, $file:literal) => {{
         let out_path = $out_dir.join($file);
         let mut output: String = header().to_string();
-        output.push_str(include_str!(concat!("../lib/", $file)));
+        output.push_str(include_str!(concat!("../lib/src/", $file)));
         write_file(&out_path, output)
     }};
 }
 
 /// Emit workex library
-fn emit_sdk(pkg: &Package) -> Result<(), Error> {
-    let lib_path = Path::new(&pkg.out_dir).join(&pkg.lib_path);
+fn emit_library(pkg: &Package, cli: &CliOptions) -> Result<(), Error> {
+    let lib_path = Path::new(&pkg.out_dir).join(&cli.lib_path);
 
     if lib_path.exists() {
+        if cli.keep_lib {
+            println!("not emitting workex library because --keep-lib is used");
+            return Ok(());
+        }
         std::fs::remove_dir_all(&lib_path).change_context(Error::IO)?;
     }
     std::fs::create_dir_all(&lib_path).change_context(Error::IO)?;
-    emit_sdk_file!(lib_path, "index.ts")?;
-    emit_sdk_file!(lib_path, "bind.ts")?;
-    emit_sdk_file!(lib_path, "client.ts")?;
-    emit_sdk_file!(lib_path, "types.ts")?;
-    emit_sdk_file!(lib_path, "utils.ts")?;
-    emit_sdk_file!(lib_path, "adapters.ts")?;
+    emit_lib_file!(lib_path, "index.ts")?;
+    emit_lib_file!(lib_path, "bind.ts")?;
+    emit_lib_file!(lib_path, "client.ts")?;
+    emit_lib_file!(lib_path, "types.ts")?;
+    emit_lib_file!(lib_path, "utils.ts")?;
+    emit_lib_file!(lib_path, "adapters.ts")?;
+    emit_lib_file!(lib_path, "pure_result.ts")?;
 
     Ok(())
 }
 
-/// Emit protocol.ts
-fn make_protocol(pkg: &Package) -> BTreeMap<String, usize> {
-    pkg.interfaces
-        .iter()
-        .flat_map(|interface| {
-            interface
-                .functions
-                .iter()
-                .map(|function| (&interface.name, &function.name))
-        })
-        .enumerate()
-        .map(|(i, (interface, function))| {
-            (format!("{interface}_{function}"), i + 16) // offset the id to reserve some for the SDK
-        })
-        .collect()
+/// Make map from function name to function id
+fn make_func_id_map(pkg: &Package) -> BTreeMap<String, usize> {
+    let mut map = BTreeMap::new();
+    // 0-15 are reserved function id for internal use in the workex library
+    let mut i = 16;
+    for interface in &pkg.interfaces {
+        for function in &interface.functions {
+            map.insert(format!("{}_{}", interface.name, function.name), i);
+            i += 1;
+        }
+    }
+    map
 }
 
-/// Emit send.ts and recv.ts
-fn emit_index(pkg: &Package, out_dir: &Path) -> Result<(), Error> {
-    for id in ["send", "recv"] {
-        let output = cconcat![
-            header(),
-            cconcat!(pkg.interfaces.iter().map(|interface| {
-                format!(r#"export * from "./{}.{}.ts";"#, interface.name, id)
-            }))
-        ];
-        let path = out_dir.join(format!("{id}.ts"));
-        write_file(&path, output.to_string())?;
+/// Emit {out_dir}/sides/SIDE.ts files
+///
+/// Each SIDE.ts contains re-exports from ../interfaces/INTERFACE.{send,recv}.ts
+/// as defined by the annotations in the interface comments
+fn emit_sides(pkg: &Package, out_dir: &Path) -> Result<(), Error> {
+    let sides_dir = out_dir.join("sides");
+    if sides_dir.exists() {
+        std::fs::remove_dir_all(&sides_dir).change_context(Error::IO)?;
+    }
+    std::fs::create_dir_all(&sides_dir).change_context(Error::IO)?;
+    let mut sides: BTreeMap<String, String> = Default::default();
+    for interface in &pkg.interfaces {
+        for send_side in &interface.send_sides {
+            let side_file = sides.entry(send_side.clone()).or_default();
+            side_file.push_str(&format!(
+                "export * from \"../interfaces/{}.send.ts\";\n",
+                interface.name
+            ));
+        }
+        for recv_side in &interface.recv_sides {
+            let side_file = sides.entry(recv_side.clone()).or_default();
+            side_file.push_str(&format!(
+                "export * from \"../interfaces/{}.recv.ts\";\n",
+                interface.name
+            ));
+        }
+    }
+    for (side, content) in sides {
+        let path = sides_dir.join(format!("{}.ts", side));
+        write_file(&path, content)?;
     }
 
     Ok(())
@@ -102,20 +138,24 @@ fn emit_index(pkg: &Package, out_dir: &Path) -> Result<(), Error> {
 fn emit_interface_send(
     interface: &Interface,
     func_map: &BTreeMap<String, usize>,
-    out_dir: &Path,
-    protocol: &str,
+    interfaces_dir: &Path,
+    cli: &CliOptions,
 ) -> Result<(), Error> {
     let imports = &interface.imports.send;
+    let protocol = &cli.protocol;
+    let class_suffix = &cli.send_suffix;
+    let workex_client = &imports.workex_client_ident;
+    let workex_client_options = &imports.workex_client_options_ident;
 
     let class_decl = cblock! {
-        format!("export class {0}Client implements {0} {{", interface.name),
+        format!("export class {0}{1} implements {0} {{", interface.name, class_suffix),
         [
-            format!("private client: {}<\"{protocol}\">", imports.workex_client_ident),
+            format!("private client: {}<\"{}\">", workex_client, protocol),
             "",
             cblock! {
-                format!("constructor(options: {}) {{", imports.workex_client_options_ident),
+                format!("constructor(options: {}) {{", workex_client_options),
                 [
-                    format!("this.client = new {}(\"{protocol}\", options);", imports.workex_client_ident)
+                    format!("this.client = new {}(\"{}\", options);", workex_client, protocol)
                 ],
                 "}"
             },
@@ -136,6 +176,36 @@ fn emit_interface_send(
                     "this.client.terminate();"
                 ],
                 "}"
+            },
+            "",
+            "/**",
+            " * Get the protocol identifier used by the underlying workex communication",
+            " *",
+            " * This method is generated by workex",
+            " */",
+            cblock! {
+                format!("public protocol(): \"{}\" {{", protocol),
+                [
+                    format!("return \"{}\";", protocol)
+                ],
+                "}"
+            },
+            "",
+            "/**",
+            " * Create a client-only handshake",
+            "",
+            " * Generally, handshakes should be created using the `bindHost` function on each side.",
+            " * However, if one side is a client-only side, this method can be used to bind a stub host",
+            " * to establish the handshake.",
+            " *",
+            " * This method is generated by workex",
+            " */",
+            cblock! {
+                "public handshake() {",
+                [
+                    "return this.client.handshake();"
+                ],
+                "}"
             }
         ],
         "}"
@@ -143,18 +213,19 @@ fn emit_interface_send(
 
     let output = cconcat![
         header(),
+        // import from parent directory since we are inside interfaces/
         format!(
-            "import type {{ {} }} from \"./{}\";",
+            "import type {{ {} }} from \"../{}\";",
             interface.name, interface.filename
         ),
         "",
-        cconcat!(imports.imports.iter().map(|import| import.to_code())),
+        cconcat!(imports.imports.iter().map(|import| import.to_code(None))),
         "",
         interface.comment.to_code(),
         class_decl
     ];
 
-    let path = out_dir.join(format!("{}.send.ts", interface.name));
+    let path = interfaces_dir.join(format!("{}.send.ts", interface.name));
     write_file(&path, output.to_string())?;
 
     Ok(())
@@ -163,15 +234,17 @@ fn emit_interface_send(
 fn emit_interface_recv(
     interface: &Interface,
     func_map: &BTreeMap<String, usize>,
-    out_dir: &Path,
-    protocol: &str,
-    lib_path: &str,
+    interfaces_dir: &Path,
+    cli: &CliOptions
 ) -> Result<(), Error> {
+    let suffix = &cli.recv_suffix;
+    let protocol = &cli.protocol;
+    let lib_path = &cli.lib_path;
     let bind_func = cblock! {
-        format!("export function bind{0}Host(delegate: {0}, options: WorkexBindOptions) {{", interface.name),
+        format!("export function bind{0}{1}(delegate: {0}, options: WorkexBindOptions) {{", interface.name, suffix),
         [
             cblock! {
-                format!("bindHost(\"{protocol}\", options, (fId: number, _payload: any[]) => {{"),
+                format!("return bindHost(\"{protocol}\", options, (fId: number, _payload: any[]) => {{"),
                 [
                     cblock! {
                         "switch (fId) {",
@@ -192,17 +265,40 @@ fn emit_interface_recv(
 
     let output = cconcat![
         header(),
-        format!("import {{ type WorkexBindOptions, bindHost }} from \"{lib_path}\";"),
+        format!("import {{ type WorkexBindOptions, bindHost }} from \"../{lib_path}\";"),
         format!(
-            "import type {{ {} }} from \"./{}\";",
+            "import type {{ {} }} from \"../{}\";",
             interface.name, interface.filename
         ),
         "",
         bind_func
     ];
 
-    let path = out_dir.join(format!("{}.recv.ts", interface.name));
+    let path = interfaces_dir.join(format!("{}.recv.ts", interface.name));
     write_file(&path, output.to_string())?;
+
+    Ok(())
+}
+
+fn emit_gitignore(out_dir: &Path, cli: &CliOptions) -> Result<(), Error> {
+    let mut content = String::from("# workex generated files\n");
+    let path = out_dir.join(".gitignore");
+    let workex_lib_path = out_dir.join(&cli.lib_path);
+    // only ignore lib path if it's inside out_dir
+    if let (Ok(abs_lib_path), Ok(abs_out_path)) =
+    (workex_lib_path.canonicalize(), out_dir.canonicalize())
+{
+        if let Some(rel_path) = pathdiff::diff_paths(abs_lib_path, abs_out_path) {
+            let rel_path = rel_path.display().to_string();
+            if !rel_path.starts_with("..") {
+                content.push_str(&rel_path);
+                content.push('\n');
+            }
+        }
+        
+    }
+    content.push_str("/interfaces/\n/sides/\n");
+    write_file(&path, content.to_string())?;
 
     Ok(())
 }

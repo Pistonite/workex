@@ -1,10 +1,22 @@
 version: '3'
 
+includes:
+  test:
+    taskfile: ./test
+    dir: ./test
+
+  lib:
+    taskfile: ./lib
+    dir: ./lib
+
+  doc:
+    taskfile: ./doc
+    dir: ./doc
+
 tasks:
   install:
     desc: Install dependencies
     cmds:
-      - bun install
       - cargo install txtpp
 
   check:
@@ -14,37 +26,9 @@ tasks:
     cmds:
       - cargo clippy --all-features --all-targets -- {{.CLIPPY_ARGS}}
       - cargo fmt --check
-      - txtpp verify doc -r
 
   fix:
     desc: Run formatter
     cmds:
       - cargo fmt
-
-  run:
-    desc: Run with test inputs
-    cmds:
-      - cargo run -- -p testproto test/input.ts test/Bar.ts
-      - bunx tsc
-
-  example:
-    desc: Build example
-    cmds:
-      - cargo run -- -p app example/proto.ts
-      - bunx tsc
-      - mkdir -p example/dist
-      - bun build example/app.ts --outfile example/dist/app.js --minify
-      - bun build example/worker.ts --outfile example/dist/worker.js --minify
-      - bunx serve example
-
-  doc:
-    desc: Generate README documentation
-    cmds:
-      - bunx prettier lib --write
-      - bunx prettier doc --write
-      - bunx prettier example --write
-      - txtpp doc -r
-      - cp doc/README.md README.md
-
-
 

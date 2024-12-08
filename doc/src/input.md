@@ -34,15 +34,15 @@ If that happens, you can:
 - Separate the interfaces into different files
 - Add `// @ts-ignore` to the input file (not recommended)
 
-Some syntaxes are not supported:
+Some syntaxes are not supported, which will result in an error:
 
 - namespaces
 - imports in the middle of exports
-  Unsupported syntax will generate an error.
 
-```admonish warning
-Non-library imports should only use relative paths, not remapped/aliased paths.
-Otherwise, the generated code will not be able to find the imports.
+```admonish danger
+Relative imports are also currently not supported with the exception of importing
+from `workex` (the generated library). You can use `baseUrl` in `tsconfig.json` to
+map the paths to the correct location.
 ```
 
 Additionally, all input files also must be in the same directory, which will also be the output directory

@@ -1,29 +1,28 @@
 // import utilities from workex
 import { hostFromDelegate, type Delegate } from "./msg/workex";
 // import generated types from `sides`
-import { 
-    bindMyAwesomeLibHost, 
-} from "./msg/sides/worker.ts";
+import { bindMyAwesomeLibHost } from "./msg/sides/worker.ts";
 // import input types from the input file `proto.ts`
 import type { MyAwesomeLib } from "./msg/proto.ts";
 
 // helper function to help us distinguish between app and worker logs
 function print(msg: any) {
-  console.log("worker: " + msg);
+    console.log("worker: " + msg);
 }
 
-// you can do some extra worker initialization here
+// Do whatever initializations needed in the worker
+// here we just log that the worker has started
 print("started");
 
-// simulate some work that takes some time
+// function to simulate some work that takes some time
 // this is synchronous, so we can demonstrate workers are on separate threads
 function someExpensiveWork(): string {
-  // do some expensive work
-  let now = Date.now();
-  while (Date.now() - now < 2000) {
-    // do nothing
-  }
-  return "Hello from worker!";
+    // do some expensive work
+    let now = Date.now();
+    while (Date.now() - now < 2000) {
+        // do nothing
+    }
+    return "Hello from worker!";
 }
 
 // Create the handler to handle the messages sent by app
@@ -35,12 +34,12 @@ function someExpensiveWork(): string {
 // Note that making a class and `new`-ing it will not work
 // because how hostFromDelegate is implemented
 const handler = {
-  async doWork(): Promise<string> {
-    print("received doWork request from app");
-    const result = someExpensiveWork();
-    print("work done!");
-    return result;
-  },
+    async doWork(): Promise<string> {
+        print("received doWork request from app");
+        const result = someExpensiveWork();
+        print("work done!");
+        return result;
+    },
 } satisfies Delegate<MyAwesomeLib>;
 
 const options = { worker: self };
@@ -57,4 +56,3 @@ handshake.initiate();
 // If the calls can go both directions, you need to await for that
 // before you can start calling the other side (which is what the app does
 // in this example)
-

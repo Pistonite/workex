@@ -20,7 +20,7 @@ fn main() -> ExitCode {
 }
 
 fn main_internal() -> Result<(), Error> {
-    let cli = Cli::parse();
+    let cli = CliOptions::parse();
 
     if !cli.lib_path.starts_with("./") && !cli.lib_path.starts_with("../") {
         return Err(report!(Error::InvalidArg))
@@ -31,13 +31,11 @@ fn main_internal() -> Result<(), Error> {
     let interfaces = parse::parse(&cli.inputs, &cli.lib_path).change_context(Error::Parse)?;
 
     let pkg = Package {
-        protocol: cli.protocol,
         out_dir,
-        lib_path: cli.lib_path,
         interfaces,
     };
 
-    emit::emit(&pkg).change_context(Error::Emit)?;
+    emit::emit(&pkg, &cli).change_context(Error::Emit)?;
     println!("{} interfaces generated", pkg.interfaces.len());
     Ok(())
 }
@@ -52,27 +50,6 @@ enum Error {
     Emit,
 }
 
-#[derive(Debug, Parser)]
-#[command(author, about, version, arg_required_else_help(true))]
-struct Cli {
-    /// Input TypeScript files with `export interface` declarations
-    ///
-    /// The input files must be in the same directory, which will also be
-    /// used as the output directory.
-    #[clap(required(true))]
-    inputs: Vec<String>,
-
-    /// A string that will be used as the protocol identifier.
-    #[clap(short, long)]
-    protocol: String,
-
-    /// Path to import workex from. The SDK library will be emitted
-    /// to this directory.
-    ///
-    /// It should start with "./" or "../" and be a relative path.
-    #[clap(short, long, default_value = "./workex")]
-    lib_path: String,
-}
 
 fn get_out_dir(inputs: &[String]) -> Result<PathBuf, Error> {
     let out_dir = match inputs.first() {

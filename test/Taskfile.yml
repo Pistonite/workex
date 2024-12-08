@@ -1,0 +1,13 @@
+version: '3'
+
+tasks:
+  run:
+    desc: Run with test inputs
+    cmds:
+      - cargo run {{.CLI_ARGS}} -- -p testproto src/input.ts src/Bar.ts
+      - npx tsc
+
+  ci:
+    cmds:
+      - npm ci
+    

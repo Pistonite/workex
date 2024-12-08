@@ -10,6 +10,6 @@ import { WorkexPromise as Promise } from "./workex";
  * @workex:recv worker
  */
 export interface MyAwesomeLib {
-  /** Do some work and return the result as string */
-  doWork(): Promise<string>;
+    /** Do some work and return the result as string */
+    doWork(): Promise<string>;
 }

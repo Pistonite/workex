@@ -4,6 +4,9 @@ import { WorkexPromise as Promise } from "./workex";
 
 /**
  * My interface for testing
+ *
+ * @workex:send foo
+ * @workex:recv bar
  */
 export interface TestFoo {
     /// foo
@@ -19,6 +22,10 @@ export interface TestFoo {
     terminate_(a: number, b: number, c?: number): Promise<string>;
 }
 
+/**
+ * @workex:send bar
+ * @workex:recv foo
+ */
 export interface Bar {
     /** 
      * buz
