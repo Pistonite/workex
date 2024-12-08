@@ -9,7 +9,12 @@ import type {
     WorkexResult,
     WorkexTimeout,
 } from "./types.ts";
-import { WorkexCatchFId, WorkexMessage, WorkexReturnFId, isMessage } from "./utils.ts";
+import {
+    WorkexCatchFId,
+    WorkexMessage,
+    WorkexReturnFId,
+    isMessage,
+} from "./utils.ts";
 import { bindHost, type Handshake } from "./bind.ts";
 
 function makeMessageIdGenerator() {
@@ -64,7 +69,10 @@ export class WorkexClient<TProto extends string> {
             // invalid message id? probably fine to ignore?
             const resolve = this.pending.get(mId);
             if (!resolve) {
-                globalThis.console.warn("No resolve function for message id", mId);
+                globalThis.console.warn(
+                    "No resolve function for message id",
+                    mId,
+                );
                 return;
             }
 
@@ -164,7 +172,7 @@ export class WorkexClient<TProto extends string> {
         }
     }
 
-    /** 
+    /**
      * Create a client-side handshake
      *
      * The host-side should initiate the handshake,
