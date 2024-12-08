@@ -3,7 +3,7 @@ version: '3'
 tasks:
   ci:
     cmds:
-      - npm ci
+      - npm install
   update:
     desc: Update dependencies
     cmds:
