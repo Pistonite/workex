@@ -41,8 +41,8 @@ pub fn emit(pkg: &Package, cli: &CliOptions) -> Result<(), Error> {
     std::fs::create_dir_all(&interfaces_dir).change_context(Error::IO)?;
 
     for interface in &pkg.interfaces {
-        emit_interface_send(interface, &func_map, &interfaces_dir, &cli)?;
-        emit_interface_recv(interface, &func_map, &interfaces_dir, &cli)?;
+        emit_interface_send(interface, &func_map, &interfaces_dir, cli)?;
+        emit_interface_recv(interface, &func_map, &interfaces_dir, cli)?;
     }
 
     if cli.no_gitignore {
@@ -235,7 +235,7 @@ fn emit_interface_recv(
     interface: &Interface,
     func_map: &BTreeMap<String, usize>,
     interfaces_dir: &Path,
-    cli: &CliOptions
+    cli: &CliOptions,
 ) -> Result<(), Error> {
     let suffix = &cli.recv_suffix;
     let protocol = &cli.protocol;
@@ -286,8 +286,8 @@ fn emit_gitignore(out_dir: &Path, cli: &CliOptions) -> Result<(), Error> {
     let workex_lib_path = out_dir.join(&cli.lib_path);
     // only ignore lib path if it's inside out_dir
     if let (Ok(abs_lib_path), Ok(abs_out_path)) =
-    (workex_lib_path.canonicalize(), out_dir.canonicalize())
-{
+        (workex_lib_path.canonicalize(), out_dir.canonicalize())
+    {
         if let Some(rel_path) = pathdiff::diff_paths(abs_lib_path, abs_out_path) {
             let rel_path = rel_path.display().to_string();
             if !rel_path.starts_with("..") {
@@ -295,10 +295,9 @@ fn emit_gitignore(out_dir: &Path, cli: &CliOptions) -> Result<(), Error> {
                 content.push('\n');
             }
         }
-        
     }
     content.push_str("/interfaces/\n/sides/\n");
-    write_file(&path, content.to_string())?;
+    write_file(&path, &content)?;
 
     Ok(())
 }

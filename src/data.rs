@@ -130,7 +130,10 @@ impl PatchedImports {
     fn make_send_imports(mut imports: Vec<Import>, lib_path: &str) -> PatchedSendImports {
         let idents = match imports.iter_mut().find(|x| x.is_workex(lib_path)) {
             Some(Import::Import {
-                is_type, idents, from, ..
+                is_type,
+                idents,
+                from,
+                ..
             }) => {
                 // turn off type import on the outer level
                 // since we need to add the WorkexClient import

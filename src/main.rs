@@ -50,7 +50,6 @@ enum Error {
     Emit,
 }
 
-
 fn get_out_dir(inputs: &[String]) -> Result<PathBuf, Error> {
     let out_dir = match inputs.first() {
         None => {

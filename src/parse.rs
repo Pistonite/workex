@@ -327,7 +327,8 @@ impl<'a, 'b, 'c> ParseFile<'a, 'b, 'c> {
 
     fn parse_comments_at_pos(&self, pos: BytePos) -> CommentBlock {
         self.comments
-            .with_leading(pos, parse_comment)    .unwrap_or_default()
+            .with_leading(pos, parse_comment)
+            .unwrap_or_default()
     }
 }
 
@@ -474,7 +475,7 @@ impl<'a, 'b, 'c, 'd, 'e> ParseInterface<'a, 'b, 'c, 'd, 'e> {
                 return None;
             }
         };
-        if name == "terminate"|| name == "protocol" || name == "handshake" {
+        if name == "terminate" || name == "protocol" || name == "handshake" {
             self.emit_error(method.span, format!("method name `{}` is reserved", name));
             return None;
         }
@@ -559,7 +560,8 @@ fn parse_comment(comments: &[Comment]) -> Option<CommentBlock> {
 fn add_comment(comment: &Comment, out: &mut Vec<String>) {
     let lines = comment.text.lines().map(|line| {
         // trim !, / or * from the start of the line
-        let line = line.trim_start_matches(|c: char| c == '!' || c == '/' || c == '*' || c.is_whitespace());
+        let line = line
+            .trim_start_matches(|c: char| c == '!' || c == '/' || c == '*' || c.is_whitespace());
         // remove whitespaces
         line.trim().to_string()
     });
