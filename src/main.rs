@@ -22,9 +22,30 @@ fn main() -> ExitCode {
 fn main_internal() -> Result<(), Error> {
     let cli = CliOptions::parse();
 
+    #[allow(clippy::collapsible_if)]
     if !cli.lib_path.starts_with("./") && !cli.lib_path.starts_with("../") {
-        return Err(report!(Error::InvalidArg))
-            .attach_printable("lib_path must start with ./ or ../");
+        if !cli.lib_only && !cli.no_lib {
+            return Err(report!(Error::InvalidArg)).attach_printable(
+                "lib_path must start with ./ or ../ unless --lib-only or --no-lib is set",
+            );
+        }
+    }
+
+    if cli.lib_only {
+        let pkg = if cli.lib_out_path.is_none() {
+            let out_dir = get_out_dir(&cli.inputs)?;
+            Package {
+                out_dir,
+                interfaces: vec![],
+            }
+        } else {
+            Package {
+                out_dir: PathBuf::new(),
+                interfaces: vec![],
+            }
+        };
+        emit::emit_library(&pkg, &cli).change_context(Error::Emit)?;
+        return Ok(());
     }
 
     let out_dir = get_out_dir(&cli.inputs)?;

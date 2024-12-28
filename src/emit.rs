@@ -4,12 +4,14 @@ use std::path::Path;
 use codize::{cblock, cconcat, Concat};
 use error_stack::{Result, ResultExt};
 
-use crate::{CliOptions, Interface, Package};
+use crate::{resolve_relative_import, CliOptions, Interface, Package};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("IO error")]
     IO,
+    #[error("Must specify protocol with --protocol unless --lib-only is set")]
+    MissingProtocol,
 }
 
 fn header() -> Concat {
@@ -64,8 +66,11 @@ macro_rules! emit_lib_file {
 }
 
 /// Emit workex library
-fn emit_library(pkg: &Package, cli: &CliOptions) -> Result<(), Error> {
-    let lib_path = Path::new(&pkg.out_dir).join(&cli.lib_path);
+pub fn emit_library(pkg: &Package, cli: &CliOptions) -> Result<(), Error> {
+    let lib_path = match &cli.lib_out_path {
+        None => Path::new(&pkg.out_dir).join(&cli.lib_path),
+        Some(path) => Path::new(&path).to_path_buf(),
+    };
 
     if lib_path.exists() {
         if cli.keep_lib {
@@ -74,14 +79,25 @@ fn emit_library(pkg: &Package, cli: &CliOptions) -> Result<(), Error> {
         }
         std::fs::remove_dir_all(&lib_path).change_context(Error::IO)?;
     }
-    std::fs::create_dir_all(&lib_path).change_context(Error::IO)?;
-    emit_lib_file!(lib_path, "index.ts")?;
-    emit_lib_file!(lib_path, "bind.ts")?;
-    emit_lib_file!(lib_path, "client.ts")?;
-    emit_lib_file!(lib_path, "types.ts")?;
-    emit_lib_file!(lib_path, "utils.ts")?;
-    emit_lib_file!(lib_path, "adapters.ts")?;
-    emit_lib_file!(lib_path, "pure_result.ts")?;
+    let src_path = if cli.lib_package {
+        lib_path.join("src")
+    } else {
+        lib_path.clone()
+    };
+    std::fs::create_dir_all(&src_path).change_context(Error::IO)?;
+    emit_lib_file!(src_path, "index.ts")?;
+    emit_lib_file!(src_path, "bind.ts")?;
+    emit_lib_file!(src_path, "client.ts")?;
+    emit_lib_file!(src_path, "types.ts")?;
+    emit_lib_file!(src_path, "utils.ts")?;
+    emit_lib_file!(src_path, "adapters.ts")?;
+    emit_lib_file!(src_path, "pure_result.ts")?;
+    if cli.lib_package {
+        write_file(
+            &lib_path.join("package.json"),
+            include_str!("../lib/package.emit.json"),
+        )?;
+    }
 
     Ok(())
 }
@@ -142,7 +158,7 @@ fn emit_interface_send(
     cli: &CliOptions,
 ) -> Result<(), Error> {
     let imports = &interface.imports.send;
-    let protocol = &cli.protocol;
+    let protocol = cli.protocol.as_ref().ok_or(Error::MissingProtocol)?;
     let class_suffix = &cli.send_suffix;
     let workex_client = &imports.workex_client_ident;
     let workex_client_options = &imports.workex_client_options_ident;
@@ -193,7 +209,7 @@ fn emit_interface_send(
             "",
             "/**",
             " * Create a client-only handshake",
-            "",
+            " *",
             " * Generally, handshakes should be created using the `bindHost` function on each side.",
             " * However, if one side is a client-only side, this method can be used to bind a stub host",
             " * to establish the handshake.",
@@ -238,7 +254,7 @@ fn emit_interface_recv(
     cli: &CliOptions,
 ) -> Result<(), Error> {
     let suffix = &cli.recv_suffix;
-    let protocol = &cli.protocol;
+    let protocol = cli.protocol.as_ref().ok_or(Error::MissingProtocol)?;
     let lib_path = &cli.lib_path;
     let bind_func = cblock! {
         format!("export function bind{0}{1}(delegate: {0}, options: WorkexBindOptions) {{", interface.name, suffix),
@@ -265,7 +281,10 @@ fn emit_interface_recv(
 
     let output = cconcat![
         header(),
-        format!("import {{ type WorkexBindOptions, bindHost }} from \"../{lib_path}\";"),
+        format!(
+            "import {{ type WorkexBindOptions, bindHost }} from \"{}\";",
+            resolve_relative_import("..", lib_path)
+        ),
         format!(
             "import type {{ {} }} from \"../{}\";",
             interface.name, interface.filename
