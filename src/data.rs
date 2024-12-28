@@ -14,15 +14,32 @@ pub struct CliOptions {
     pub inputs: Vec<String>,
 
     /// A string that will be used as the protocol identifier.
+    ///
+    /// Required unless --lib-only is set.
     #[clap(short, long)]
-    pub protocol: String,
+    pub protocol: Option<String>,
 
     /// Path to import workex from. The SDK library will be emitted
     /// to this directory.
     ///
-    /// It should start with "./" or "../" and be a relative path.
+    /// This should start with "./" or "../" and be a relative path
+    /// if neither --lib-out-path nor --no-lib is not set.
     #[clap(short, long, default_value = "./workex")]
     pub lib_path: String,
+
+    /// If set, the generated library will be emitted to this directory.
+    #[clap(long)]
+    pub lib_out_path: Option<String>,
+
+    /// If set, inputs are ignored and only the SDK library is emitted.
+    /// Output directory is still inferred from the inputs,
+    /// unless --lib-out-path is set.
+    #[clap(long)]
+    pub lib_only: bool,
+
+    /// If set, the generated library will be packaged with a package.json
+    #[clap(long)]
+    pub lib_package: bool,
 
     /// Keep the library directory if it already exists.
     ///
@@ -130,10 +147,7 @@ impl PatchedImports {
     fn make_send_imports(mut imports: Vec<Import>, lib_path: &str) -> PatchedSendImports {
         let idents = match imports.iter_mut().find(|x| x.is_workex(lib_path)) {
             Some(Import::Import {
-                is_type,
-                idents,
-                from,
-                ..
+                is_type, idents, ..
             }) => {
                 // turn off type import on the outer level
                 // since we need to add the WorkexClient import
@@ -143,8 +157,6 @@ impl PatchedImports {
                         ident.is_type = true;
                     }
                 }
-                // fix the from path to be from parent
-                *from = format!("../{}", from);
                 idents
             }
             _ => {
@@ -156,8 +168,9 @@ impl PatchedImports {
                         ImportIdent::workex_client_options(),
                         ImportIdent::workex_promise(),
                     ],
-                    from: format!("../{}", lib_path),
+                    from: lib_path.to_string(),
                 });
+                Self::adjust_import_paths(&mut imports);
                 return PatchedSendImports {
                     workex_promise_ident: "WorkexPromise".to_string(),
                     workex_client_ident: "WorkexClient".to_string(),
@@ -192,11 +205,25 @@ impl PatchedImports {
             }
         };
 
+        Self::adjust_import_paths(&mut imports);
+
         PatchedSendImports {
             workex_promise_ident,
             workex_client_ident,
             workex_client_options_ident,
             imports,
+        }
+    }
+
+    /// Adjust import paths in the original input file
+    /// so they are correct for the output.
+    ///
+    /// Relative paths need to be adjusted to be relative to the output directory (./interfaces)
+    fn adjust_import_paths(imports: &mut Vec<Import>) {
+        for import in imports {
+            if let Import::Import { from, .. } = import {
+                *from = resolve_relative_import("..", from);
+            }
         }
     }
 }
@@ -472,5 +499,17 @@ impl Arg {
         };
 
         format!("{}: {}", ident_part, self.type_)
+    }
+}
+
+/// Resolve a relative import path <prefix>/<path>
+///
+/// If <path> is relative (starts with ./ or ../), it will be appended to <prefix>,
+/// otherwise, it will be kept as is
+pub fn resolve_relative_import(prefix: &str, path: &str) -> String {
+    if path.starts_with("./") || path.starts_with("../") {
+        format!("{}/{}", prefix, path)
+    } else {
+        path.to_string()
     }
 }
