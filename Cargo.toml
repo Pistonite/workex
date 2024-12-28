@@ -14,12 +14,12 @@ exclude = [
 ]
 
 [dependencies]
-clap = { version = "=4.5.4", features = ["derive"] }
-codize = "0.3.1"
+clap = { version = "4.5.23", features = ["derive"] }
+codize = "0.3.3"
 dunce = "1.0.5"
 error-stack = "0.4.1"
 pathdiff = "0.2.3"
-swc_common = { version = "0.40.0", features = ["tty-emitter"] }
-swc_core = { version = "0.106.0", features = ["ecma_ast"] }
-swc_ecma_parser = "0.152.0"
-thiserror = "1.0.64"
+swc_common = { version = "0.40.2", features = ["tty-emitter"] }
+swc_core = { version = "0.106.4", features = ["ecma_ast"] }
+swc_ecma_parser = "0.152.2"
+thiserror = "2.0.9"
