@@ -1,0 +1,20 @@
+version: '3'
+
+includes:
+  ecma:
+    taskfile: ../mono-dev/task/ecma.yaml
+    internal: true
+
+tasks:
+  check:
+    desc: Run checks
+    cmds:
+      - task: ecma:tsc-check
+      - task: ecma:prettier-check
+      - task: ecma:eslint-check
+
+  fix:
+    desc: Fix formatting and other check issues
+    cmds:
+      - task: ecma:eslint-fix
+      - task: ecma:prettier-fix

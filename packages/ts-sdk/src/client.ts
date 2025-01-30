@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { errstr, type Result, type Err } from "./pure_result.ts";
+import { errstr, type Result, type Err } from "@pistonite/pure/result";
 
 import type {
     WorkerLike,
@@ -9,12 +9,8 @@ import type {
     WorkexResult,
     WorkexTimeout,
 } from "./types.ts";
-import {
-    WorkexCatchFId,
-    WorkexMessage,
-    WorkexReturnFId,
-    isMessage,
-} from "./utils.ts";
+import type { WorkexMessage } from "./utils.ts";
+import { WorkexCatchFId, WorkexReturnFId, isMessage } from "./utils.ts";
 import { bindHost, type Handshake } from "./bind.ts";
 
 function makeMessageIdGenerator() {
@@ -103,7 +99,7 @@ export class WorkexClient<TProto extends string> {
         const nextMessageId = this.nextMessageId;
         let mId = nextMessageId();
         if (this.pending.has(mId)) {
-            let initialMId = mId;
+            const initialMId = mId;
             while (this.pending.has(mId)) {
                 mId = nextMessageId();
                 if (mId === initialMId) {

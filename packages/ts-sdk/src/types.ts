@@ -3,7 +3,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Err, Ok, Result, Void, VoidOk } from "./pure_result.ts";
+import type { Err, Ok, Result, Void, VoidOk } from "@pistonite/pure/result";
 
 /** An error caught by a try-catch */
 export type WorkexCatch = {
@@ -32,6 +32,7 @@ export type WorkexResult<T> = Result<T, WorkexError>;
 export type WorkexVoid = Void<WorkexError>;
 /** Promise type wrapper, mainly to make it easier for codegen to produce types */
 export type WorkexPromise<T> = Promise<
+    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     (T extends void ? VoidOk : Ok<T>) | Err<WorkexError>
 >;
 

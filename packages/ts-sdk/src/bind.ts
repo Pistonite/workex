@@ -1,4 +1,4 @@
-import { errstr } from "./pure_result.ts";
+import { errstr } from "@pistonite/pure/result";
 
 import type { WorkerLike, WorkexBindOptions } from "./types.ts";
 import {
@@ -14,6 +14,7 @@ export function bindHost<TProto extends string>(
     protocol: TProto,
     options: WorkexBindOptions,
     /// Handler to handle the request
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     handler: (fId: number, data: any[]) => Promise<any> | undefined,
 ): Handshake {
     const { worker } = options;
