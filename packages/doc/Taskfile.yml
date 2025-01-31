@@ -1,0 +1,17 @@
+version: '3'
+
+tasks:
+  dev:
+    desc: Start mdbook in watch mode
+    cmds:
+      - task: build
+      - live-server book -p 8081 {{.CLI_ARGS}} &
+      # watch command runs from workspace root
+      - cargo watch -s "txtpp -r -N packages/doc/src && mdbook build packages/doc"
+
+  build:
+    desc: (Re-)build the book
+    cmds:
+      - rm -rf book
+      - txtpp -r src
+      - mdbook build

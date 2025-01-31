@@ -13,17 +13,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: true
       - uses: arduino/setup-task@v2
         with:
           version: 3.x
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 20
+          cache: 'pnpm'
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: task install-ci
       - run: cargo build --release
       - run: task check
-      - run: task test:ci
       - run: task test:run -- --release
 
   check-lib:
@@ -31,21 +39,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: true
       - uses: arduino/setup-task@v2
         with:
           version: 3.x
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20.x
-      - run: task lib:ci
-      - run: task lib:check
+          node-version: 20
+          cache: 'pnpm'
+      - run: task install-ci
+      - run: task ts-sdk:check
 
   docs:
     name: Docs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: true
       - uses: arduino/setup-task@v2
         with:
           version: 3.x
@@ -55,7 +73,7 @@ jobs:
       - run: task doc:build
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: doc/book
+          path: packages/doc/book
           retention-days: 3
 
   deploy-docs:

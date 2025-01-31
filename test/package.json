@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "@pistonite/pure": "npm:@jsr/pistonite__pure@^0.0.11",
-    "typescript": "^5.7.2"
-  }
-}
