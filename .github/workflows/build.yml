@@ -54,7 +54,7 @@ jobs:
           node-version: 20
           cache: 'pnpm'
       - run: task install-ci
-      - run: task lib:check
+      - run: task ts-sdk:check
 
   docs:
     name: Docs
@@ -75,8 +75,6 @@ jobs:
         with:
           node-version: 20
           cache: 'pnpm'
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
       - uses: cargo-bins/cargo-binstall@main
       - run: cargo-binstall --no-confirm mdbook mdbook-admonish txtpp
       - run: task doc:build
