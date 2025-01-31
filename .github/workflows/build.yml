@@ -68,13 +68,6 @@ jobs:
         with:
           version: 3.x
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'pnpm'
       - uses: cargo-bins/cargo-binstall@main
       - run: cargo-binstall --no-confirm mdbook mdbook-admonish txtpp
       - run: task doc:build
