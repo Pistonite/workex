@@ -2,22 +2,33 @@ version: '3'
 
 includes:
   test:
-    taskfile: ./test
-    dir: ./test
+    taskfile: ./packages/test
+    dir: ./packages/test
 
-  lib:
-    taskfile: ./lib
-    dir: ./lib
+  ts-sdk:
+    taskfile: ./packages/ts-sdk
+    dir: ./packages/ts-sdk
 
   doc:
-    taskfile: ./doc
-    dir: ./doc
+    taskfile: ./packages/doc
+    dir: ./packages/doc
 
 tasks:
+  install-extra-cargo-tools:
+    aliases: [iects]
+    desc: Install extra development tools needed
+    cmds:
+      - cargo install txtpp mdbook mdbook-admonish live-server magoo
+
   install:
     desc: Install dependencies
     cmds:
-      - cargo install txtpp
+      - magoo install
+      - pnpm install
+
+  install-ci:
+    cmds:
+      - pnpm install --frozen-lockfile
 
   check:
     desc: Check for issues

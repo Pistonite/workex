@@ -1,0 +1,22 @@
+[package]
+name = "workex"
+version = "0.0.5"
+edition = "2021"
+description = "In-house messaging bindgen library for workers/windows"
+repository = "https://github.com/Pistonite/workex"
+license = "MIT"
+authors = ["Pistonight <pistonknight@outlook.com>"]
+exclude = [
+    "Taskfile.yml",
+]
+
+[dependencies]
+clap = { version = "4.5.27", features = ["derive"] }
+codize = "0.3.3"
+derive_more = { version = "1.0.0", features = ["deref", "deref_mut"] }
+dunce = "1.0.5"
+error-stack = "0.4.1"
+swc_common = { version = "5.0.1", features = ["tty-emitter"] }
+swc_core = { version = "12.0.0", features = ["ecma_ast"] }
+swc_ecma_parser = "7.0.1"
+thiserror = "2.0.11"
