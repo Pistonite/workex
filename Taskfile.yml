@@ -14,8 +14,8 @@ includes:
     dir: ./packages/doc
 
 tasks:
-  install-extra-cargo-tools:
-    aliases: [iects]
+  install-cargo-extra-tools:
+    aliases: [icets]
     desc: Install extra development tools needed
     cmds:
       - cargo install txtpp mdbook mdbook-admonish live-server magoo
