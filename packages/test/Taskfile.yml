@@ -10,4 +10,4 @@ tasks:
     desc: Run with test inputs
     cmds:
       - cargo run {{.CLI_ARGS}} -- -p testproto src/input.ts src/Bar.ts
-      - task: ecma:tsc-check
+      - pnpm exec tsc

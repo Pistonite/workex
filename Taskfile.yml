@@ -1,6 +1,10 @@
 version: '3'
 
 includes:
+  cli:
+    taskfile: ./packages/cli
+    dir: ./packages/cli
+
   test:
     taskfile: ./packages/test
     dir: ./packages/test
@@ -16,30 +20,47 @@ includes:
 tasks:
   install-cargo-extra-tools:
     aliases: [icets]
-    desc: Install extra development tools needed
     cmds:
       - cargo install txtpp mdbook mdbook-admonish live-server magoo
 
   install:
-    desc: Install dependencies
     cmds:
       - magoo install
       - pnpm install
+      - task: post-install
 
   install-ci:
     cmds:
       - pnpm install --frozen-lockfile
+      - task: post-install
 
+  post-install:
+    cmds:
+      - task: doc:install
+      - task: ts-sdk:install
+      
   check:
-    desc: Check for issues
-    vars:
-      CLIPPY_ARGS: -D warnings -D clippy::todo
     cmds:
-      - cargo clippy --all-features --all-targets -- {{.CLIPPY_ARGS}}
-      - cargo fmt --check
+      - task: cli:check
+      - task: ts-sdk:check
 
-  fix:
-    desc: Run formatter
+  test:
     cmds:
-      - cargo fmt
+      - task: test:run
+
+  typedoc:
+    cmds:
+      - pnpm exec typedoc
+
+  serve:
+    deps: [typedoc]
+    cmds:
+      - pnpm exec serve docs
+
+  build-doc:
+    cmds:
+      - task: doc:build
+      - task: typedoc
+      - cp -r docs packages/doc/book
+
 
