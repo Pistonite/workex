@@ -1,2 +1,5 @@
 /node_modules/
 /package-lock.json
+.prettierignore
+/eslint.config.js
+/tsconfig*.json

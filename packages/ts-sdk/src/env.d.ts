@@ -1,2 +1,1 @@
-/// <reference lib="dom" />
-/// <reference lib="dom.iterable" />
+declare function setTimeout(fn: unknown, timeout: number);

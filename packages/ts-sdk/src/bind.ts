@@ -8,6 +8,7 @@ import {
     WorkexReturnFId,
     isMessage,
 } from "./utils.ts";
+import { globalConsole } from "./global.ts";
 
 /// Bind the worker to a host handler
 export function bindHost<TProto extends string>(
@@ -45,7 +46,7 @@ export function bindHost<TProto extends string>(
                 d: await workexresult,
             } satisfies WorkexMessage<TProto>);
         } catch (e) {
-            globalThis.console.error(e);
+            globalConsole().error(e);
             worker.postMessage({
                 p: protocol,
                 m: mId,
@@ -120,14 +121,24 @@ class HandshakeImpl implements Handshake {
     }
 
     async doInitiate() {
+        let count = 0;
         while (!this.isReady) {
+            count++;
             this.worker.postMessage({
                 p: this.protocol,
                 m: 1,
                 d: 1,
                 f: WorkexHandshakeFId,
             });
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            // Slow down after 10 tries to avoid high CPU
+            await new Promise((resolve) =>
+                setTimeout(resolve, count > 100 ? 2000 : 100),
+            );
+            if (count === 100) {
+                globalConsole().warn(
+                    "[workex] initiated handshake has not estalished for 10 seconds!",
+                );
+            }
         }
     }
 

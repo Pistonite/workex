@@ -1,8 +1,12 @@
 {
     "private": true,
+    "type": "module",
     "devDependencies": {
         "@pistonite/workex": "workspace:*",
         "@pistonite/pure": "^0.0.18",
-        "typescript": "^5.7.2"
-    }
+        "mono-dev": "workspace:*"
+    },
+    "nocheck": [
+        "/src"
+    ]
 }
