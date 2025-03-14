@@ -1,0 +1,29 @@
+<html>
+    <head>
+    </head>
+    <body>
+        Main
+        <button id="thebutton" >Open</button>
+        <button id="thebutton2" >Send</button>
+        <script>
+        let first = undefined;
+        thebutton.addEventListener("click", () => {
+            const w = window.open("https://localhost:4001", "_blank", "popup,noopener");
+            if (!w) {
+                console.error("open failed")
+            }
+            w.addEventListener("message", (x) => console.log(x));
+            if (!first) {
+                first  = w;
+                console.log("first is set")
+            }
+        });
+        thebutton2.addEventListener("click", () => {
+            if (first) {
+                first.postMessage("hello from main");
+            }
+        });
+            
+        </script>
+    </body>
+</html>

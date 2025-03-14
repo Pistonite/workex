@@ -4,3 +4,7 @@ packages:
   - packages/test
   - packages/example-standalone
   - packages/example-vite
+  - packages/example-multiwindow
+onlyBuiltDependencies:
+  - '@swc/core'
+  - esbuild

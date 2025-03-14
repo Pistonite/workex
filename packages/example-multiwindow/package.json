@@ -1,0 +1,7 @@
+{
+    "devDependencies": {
+        "@pistonite/workex": "workspace:*",
+        "@types/bun": "^1.2.4",
+        "mono-dev": "workspace:*"
+    }
+}
