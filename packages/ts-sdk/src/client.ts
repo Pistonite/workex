@@ -12,6 +12,7 @@ import type {
 import type { WorkexMessage } from "./utils.ts";
 import { WorkexCatchFId, WorkexReturnFId, isMessage } from "./utils.ts";
 import { bindHost, type Handshake } from "./bind.ts";
+import { globalConsole } from "./global.ts";
 
 function makeMessageIdGenerator() {
     let nextId = MIN_MID;
@@ -65,10 +66,7 @@ export class WorkexClient<TProto extends string> {
             // invalid message id? probably fine to ignore?
             const resolve = this.pending.get(mId);
             if (!resolve) {
-                globalThis.console.warn(
-                    "No resolve function for message id",
-                    mId,
-                );
+                globalConsole().warn("No resolve function for message id", mId);
                 return;
             }
 
@@ -83,7 +81,7 @@ export class WorkexClient<TProto extends string> {
                     });
                 }
             } catch (e) {
-                globalThis.console.error(e);
+                globalConsole().error(e);
                 resolve({ err: { type: "InternalError", message: errstr(e) } });
             }
         };

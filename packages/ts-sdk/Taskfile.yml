@@ -6,18 +6,19 @@ includes:
     internal: true
 
 tasks:
+  install:
+    cmds:
+      - task: ecma:mono-config
+
   check:
     desc: Run checks
     cmds:
-      - task: ecma:tsc-check
-      - task: ecma:prettier-check
-      - task: ecma:eslint-check
+      - task: ecma:mono-check
 
   fix:
     desc: Fix formatting and other check issues
     cmds:
-      - task: ecma:eslint-fix
-      - task: ecma:prettier-fix
+      - task: ecma:mono-fix
 
   publish:
     cmds:

@@ -1,4 +1,4 @@
-name: Build
+name: CI
 on:
   push:
     branches:
@@ -9,75 +9,69 @@ on:
 
 jobs:
   build:
-    name: Build, Check, Run Test Data
+    name: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
           submodules: true
-      - uses: arduino/setup-task@v2
-        with:
-          version: 3.x
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'pnpm'
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: task install-ci
+        with:
+          targets: ${{ inputs.rust_targets }}
+      - uses: Swatinem/rust-cache@v2 # useblacksmith/rust-cache@v3
       - run: cargo build --release
-      - run: task check
-      - run: task test:run -- --release
 
-  check-lib:
-    name: Check Lib
+  check:
+    name: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
           submodules: true
-      - uses: arduino/setup-task@v2
+      - uses: ./.github/steps/setup
         with:
-          version: 3.x
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'pnpm'
+          token: ${{ secrets.GITHUB_TOKEN }}
       - run: task install-ci
-      - run: task ts-sdk:check
+      - run: task check
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: true
+      - uses: ./.github/steps/setup
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - run: task install-ci
+      - run: task test
 
   docs:
-    name: Docs
+    name: docs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
           submodules: true
-      - uses: arduino/setup-task@v2
+      - uses: ./.github/steps/setup
         with:
-          version: 3.x
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: cargo-bins/cargo-binstall@main
-      - run: cargo-binstall --no-confirm mdbook mdbook-admonish txtpp
-      - run: task doc:build
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/steps/setup-mdbook
+      - run: task install-ci
+      - run: task build-doc
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with:
           path: packages/doc/book
           retention-days: 3
 
   deploy-docs:
-    name: Deploy Docs
+    name: deploy-docs
     needs:
       - docs
     if: github.event_name != 'pull_request'
