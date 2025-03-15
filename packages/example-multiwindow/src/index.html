@@ -5,14 +5,39 @@
         Main
         <button id="thebutton" >Open</button>
         <button id="thebutton2" >Send</button>
+        <button id="thebutton3" >Send iframe</button>
+        <iframe src="http://localhost:4001" id="theiframe"></iframe>
+        <iframe src="http://localhost:4001" id="theiframe2"></iframe>
+
         <script>
         let first = undefined;
+        window.addEventListener("message", (x) => {
+            if (x.data?.source === "react-devtools-content-script") {
+                return;
+            }
+            console.log("message from window", x);
+            if (x.source === first) {
+                console.log(x.source === first);
+                x.source.postMessage("got your message", "http://localhost:4001");
+            }
+            if (x.source === theiframe.contentWindow) {
+                console.log("frame 1");
+                x.source.postMessage("got your message, frame 1", "http://localhost:4001");
+            }
+            if (x.source === theiframe2.contentWindow) {
+                console.log("frame 2");
+                x.source.postMessage("got your message, frame 2", "http://localhost:4001");
+                
+            }
+        });
         thebutton.addEventListener("click", () => {
-            const w = window.open("https://localhost:4001", "_blank", "popup,noopener");
+            const w = window.open("http://localhost:4001", "_blank", "popup");
             if (!w) {
                 console.error("open failed")
             }
-            w.addEventListener("message", (x) => console.log(x));
+            w.addEventListener("message", (x) => {
+                console.log("message from w", x)
+            });
             if (!first) {
                 first  = w;
                 console.log("first is set")
@@ -20,8 +45,12 @@
         });
         thebutton2.addEventListener("click", () => {
             if (first) {
-                first.postMessage("hello from main");
+                first.postMessage("hello from main", "http://localhost:4001");
             }
+        });
+        thebutton3.addEventListener("click", () => {
+                theiframe.contentWindow.postMessage("hello from main", "http://localhost:4001");
+            
         });
             
         </script>

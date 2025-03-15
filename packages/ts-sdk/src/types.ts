@@ -78,3 +78,175 @@ export type WorkexClientOptions = WorkexCommonOptions & {
 
 /** Options when binding a host */
 export type WorkexBindOptions = WorkexCommonOptions;
+
+/**
+ * A bridge represents an established connection channel.
+ * Lands can be opened on the bridge to send and receive messages
+ */
+type Bridge = {
+    openLane: (payload: any) => Lane;
+    onLaneOpen: (callback: (payload: any, lane: Lane) => void) => void;
+}
+
+type LaneSelection = Record<string, (lane: Lane) => void>;
+
+type Lane = {
+
+}
+
+type End = {
+    /** 
+     * If the channel this end is connected to is considered secure,
+     * which means sensitivity data sent will not be leaked to attacks
+     * like Cross-Site Scripting (XSS)
+     */
+    readonly secure: boolean;
+    /** Send message to the other end */
+    send: (message: any) => void;
+    /** Register handler when recving from the other end */
+    onRecv: (callback: (message: any) => void) => void;
+}
+
+type ClosableEnd = End & {
+    /** Close the channel */
+    close: () => void;
+    /** Register handler to be invoked when the other end closes the channel */
+    onClose: (callback: () => void) => void;
+}
+
+/** 
+ * Only callable if the global context is a WorkerGlobalScope.
+ * Using this scope, an `End` will be created for messaging
+ * to the context that created this worker
+ */
+const linkToWorkerCreator = (): Result<End, Error> => {
+
+}
+
+/**
+ * Create an `End` for messaging to the worker
+ */
+const linkToWorker = (worker: Worker): Result<End, Error> => {
+}
+
+type WorkexWorker = {
+    // the window or worker that created this worker
+    creator: () => Result<End, Error>;
+
+    // create a new worker and link to it
+    create: (creator: () => Worker) => Result<End, Error>;
+}
+
+type WorkexMainWindow = {
+    /**
+     * Open a new window and create an end to communicate with that window
+     * 
+     * In the opened window, connection should be established by calling
+     * `linkAsChildWindow().opener()`
+     */
+    open: (url: string, name?: string, features?: string) => Result<ClosableEnd, Error>;
+
+  
+    /**
+     * Open a new window and create an end to communicate with that window
+     * 
+     * In the frame, connection should be established by calling
+     * `linkAsChildWindow().opener()`
+     */
+    linkFrame: (iframe: HTMLIFrameElement) => Result<End, Error>;
+}
+
+
+type WorkexChildWindow = WorkexMainWindow & {
+    /** 
+     * Get an end that can be used to communicate with opener of this window,
+     * (i.e. the window that called `window.open`)
+     */
+    opener: () => Result<End, Error>;
+    /** 
+     * Get an end that can be used to communicate with parent of this window
+     * (i.e. if this window is an iframe, the parent is the window that contains this iframe)
+     */
+
+    parent: () => Result<End, Error>;
+
+}
+
+/**
+ * Create and set a global window handler for messaging to the opener
+ * and for opening new windows
+ * 
+ * This should only be called if global context is a Window and should
+ * only be called once.
+ */
+const linkAsMainWindow = (): Result<WorkexMainWindow, Error> => {
+}
+
+const linkAsChildWindow = (parentOrigin: string): Result<WorkexChildWindow, Error> => {
+}
+
+type MultiEnd = {
+    singleEnd: () => Result<End, Error>;
+}
+
+type WorkexWindowController<THostSymbol> = {
+    opener(): ActiveBus<THostSymbol>;
+
+    openWindow<T>(url: string, name?: string, features?: string): PassiveBus<T>;
+}
+
+type WorkexWorkerController = {
+    openBus: (proto: string) => ActiveBus<ProtoBase>;
+}
+
+type HostOf<THostSymbol> = any
+
+type PassiveBus<TProto extends ProtoBase, TSide extends TProto["TSides"]> = {
+    onCalleeOpen: <T extends TProto["THostSymbols"][TSide]>(hostType: T, callback: (host: TProto["Types"][T]) => void) => void;
+    onCallerOpen: <T extends TProto["TClient Symbols"][TSide]>(interfaceType: T, callback: () => Promise<HostOf<T>>) => void;
+    onClose: (callback: () => void) => void;
+    close: () => void;
+}
+
+type ActiveBus<THostSymbol> = {
+    openCallee: <T extends THostSymbol>(interfaceType: T, host: HostOf<T>) => Promise<void>;
+    openCaller: <T extends THostSymbol>(interfaceType: T) => Promise<HostOf<T>>;
+    close: () => void;
+}
+
+type Lane = {
+
+}
+
+type ProtoBase = {
+    TSides: string;
+    THostSymbols: {
+        [key: string]: string;
+    };
+    TClientSymbols: {
+        [key: string]: string;
+    };
+    Types: {
+        [key: string]: any;
+    }
+}
+
+type MyProto = {
+    TSides: "app" | "ext" | "runtime";
+    THostSymbols: {
+        "app": "RuntimeApp" | "ExtensionApp";
+        "ext": "Extension";
+        "runtime": "Runtime";
+    },
+    TClientSymbols: {
+        "app": "Runtime" | "Extension";
+        "ext": "ExtensionApp";
+        "runtime": "RuntimeApp";
+    }
+    Types: {
+        "RuntimeApp": any;
+        "ExtensionApp": any;
+        "Extension": any;
+        "Runtime": any;
+    }
+}
