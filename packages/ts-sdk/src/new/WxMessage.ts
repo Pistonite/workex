@@ -1,7 +1,21 @@
 import { WxEnd } from "./WxEnd.ts";
 
+/** 
+ * Internal protocol used for implementation of lower-level
+ * communication before control is passed to user-defined interfaces
+ */
 export const wxInternalProtocol = "workex" as const;
-export const wxFuncHello = 2 as const;
+/**
+ * Func ID used for handshake. The message ID determines the message type
+ * This func ID is used when establishing connection when creating {@link WxEnd}
+ */
+export const wxFuncHandshake = 2 as const;
+/** Hello handshake message */
+export const wxHandshakeMsgHello = 1 as const;
+
+/** 
+ * Func ID used to request closing the connection
+ */
 export const wxFuncClose = 3 as const;
 
 /**

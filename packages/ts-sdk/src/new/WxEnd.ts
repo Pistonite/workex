@@ -1,6 +1,6 @@
 import { errstr } from "@pistonite/pure/result";
 import { wxFail, WxResult, WxVoid } from "./WxError.ts";
-import { isWxMessageEvent, wxFuncHello, wxInternalProtocol, WxMessage, WxPayload } from "./WxMessage.ts";
+import { isWxMessageEvent, wxFuncHandshake, wxFuncHello, wxHandshakeMsgHello, wxInternalProtocol, WxMessage, WxPayload } from "./WxMessage.ts";
 import { once } from "@pistonite/pure/sync";
 
 /** 
@@ -61,15 +61,30 @@ export const wxCreateWorkerEnd = async (
     onRecv: WxEndRecvFn,
     option?: WxEndOptions
 ): Promise<WxResult<WxEnd>> => {
+    let isClosed = false;
+    let closeReceiveWarned = false;
+
     const controller = new AbortController();
     try {
         worker.addEventListener("message", (event: unknown) => {
             if (!isWxMessageEvent(event)) {
                 return;
             }
-            if (event.data.p !== wxInternalProtocol) {
-                onRecv(event.data);
+            const {p,m,f} = event.data;
+            if (isClosed) {
+                if (!closeReceiveWarned) {
+                    closeReceiveWarned = true;
+                    console.warn(`[workex] message received on an end that has been closed. p: ${p}, mID: ${m}, fID: ${f} (further warnings are suppressed)`);
+                }
+                return;
             }
+            if (p === wxInternalProtocol) {
+                if (f === wxFuncHandshake) {
+                    // ignore hello messages on established channel
+                    return;
+                }
+            }
+            onRecv(event.data);
         }, { signal: controller.signal });
     } catch (e) {
         console.error(e);
@@ -86,9 +101,17 @@ export const wxCreateWorkerEnd = async (
                 if (!isWxMessageEvent(event)) {
                     return;
                 }
-                if (event.data.p === wxInternalProtocol && event.data.f === wxFuncHello) {
-                    resolve({});
-                    controller.abort();
+                const {p, f, m} = event.data;
+                if (p !== wxInternalProtocol) {
+                    return;
+                }
+                if (f === wxFuncHandshake) {
+                    if (m === wxHandshakeMsgHello) {
+                        resolve({});
+                        controller.abort();
+                        return;
+                    }
+                    console.warn(`[workex] unknown handshake message with mID ${m}`);
                 }
             }, { signal: controller.signal });
         } catch (e) {
