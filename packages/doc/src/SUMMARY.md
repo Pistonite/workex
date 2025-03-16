@@ -11,4 +11,7 @@
   - [Walkthrough: Standalone](./walkthrough_standalone_g.md)
   - [Walkthrough: Vite](./walkthrough_vite_g.md)
 - [Ignore Linter](./ignore_linter.md)
-
+- [Technical Details](./concepts/index.md)
+  - [Event and Messaging](./concepts/event.md)
+  - [The "End"](./concepts/end.md)
+  - [The BUS](./concepts/bus.md)

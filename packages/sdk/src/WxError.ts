@@ -4,8 +4,10 @@ import type { Err, Ok, Result, Void, VoidOk } from "@pistonite/pure/result";
 export type Wec = 
     /** Generic Failure */
     "Fail"
-    /** Timeout during initial handshake */
-    | "HandshakeTimeout"
+    /** Failed to add event listener*/
+    | "AddEventListenerFail"
+    /** Timeout while waiting for response */
+    | "Timeout"
     /** Function should only be called when globalThis is WorkerGlobalScope */
     | "NotWorkerGlobalScope"
     /** Function should only be called when globalThis is Window */
@@ -16,6 +18,14 @@ export type Wec =
     | "NoOriginForWindow"
     /** Failed to parse URL, for example when opening a popup or parsing src of iframe */
     | "InvalidUrl"
+    /** If the other end does not agree with the protocols used by this end */
+    | "ProtocolDisagree"
+    /** If the other end closed unexpectedly */
+    | "Closed"
+    /** If a message received has a protocol not registered on the bus */
+    | "UnknownProtocol"
+    /** An error is caught at the bus level in the handler on the other end */
+    | "Catch"
     
     ;
 

@@ -1,6 +1,10 @@
 version: '3'
 
 includes:
+  common:
+    taskfile: ./packages/mono-dev/task/common.yaml
+    flatten: true
+
   cli:
     taskfile: ./packages/cli
     dir: ./packages/cli
@@ -21,7 +25,7 @@ tasks:
   install-cargo-extra-tools:
     aliases: [icets]
     cmds:
-      - cargo install txtpp mdbook mdbook-admonish live-server magoo
+      - cargo install txtpp mdbook mdbook-admonish live-server magoo cargo-watch
 
   install:
     cmds:

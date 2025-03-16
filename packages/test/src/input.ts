@@ -5,8 +5,9 @@ import { WorkexPromise as Promise } from "@pistonite/workex";
 /**
  * My interface for testing
  *
- * @workex:send foo
- * @workex:recv bar
+ * @workex:impl Extension passive
+ * @workex:caller foo
+ * @workex:callee bar
  */
 export interface TestFoo {
     /// foo

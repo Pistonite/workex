@@ -22,7 +22,7 @@ importers:
     devDependencies:
       '@pistonite/workex':
         specifier: workspace:*
-        version: link:../ts-sdk
+        version: link:../sdk
       '@types/bun':
         specifier: ^1.2.4
         version: 1.2.5
@@ -34,7 +34,7 @@ importers:
     devDependencies:
       '@pistonite/workex':
         specifier: workspace:*
-        version: link:../ts-sdk
+        version: link:../sdk
       prettier:
         specifier: ^3.4.2
         version: 3.4.2
@@ -137,6 +137,16 @@ importers:
         specifier: ^1.2.4
         version: 1.2.5
 
+  packages/sdk:
+    dependencies:
+      '@pistonite/pure':
+        specifier: ^0.23.1
+        version: 0.23.1
+    devDependencies:
+      mono-dev:
+        specifier: workspace:*
+        version: link:../mono-dev
+
   packages/test:
     devDependencies:
       '@pistonite/pure':
@@ -144,7 +154,7 @@ importers:
         version: 0.0.18
       '@pistonite/workex':
         specifier: workspace:*
-        version: link:../ts-sdk
+        version: link:../sdk
       mono-dev:
         specifier: workspace:*
         version: link:../mono-dev
@@ -520,6 +530,9 @@ packages:
 
   '@pistonite/pure@0.0.18':
     resolution: {integrity: sha512-1oqnyD5TLWfjK0eh61uiKi+q6gTCr6fjbsEEY9Vp3OuUyo24GvJDAC+SkGS3Ul10z881QaGRY0UiDTUS6IeDTQ==}
+
+  '@pistonite/pure@0.23.1':
+    resolution: {integrity: sha512-SoewVFO0W5xWNcAnZdByGU+uDGJ1Lxyics8LrkCt2D2f24MT4FhSwPnRRLr8WG+jbqxR9fpSb+WkU5GpOFIoOg==}
 
   '@pistonite/workex@0.0.5':
     resolution: {integrity: sha512-eYeIPFaFaVJs/Vxx9bx7CcwFUHNwxSWd+P82vN6/18hhdIBCcO89LboV+4mfh6iOee0LhopuU9Bz+/a+R5MPVQ==}
@@ -2647,6 +2660,11 @@ snapshots:
   '@pistonite/pure@0.0.18':
     dependencies:
       '@types/file-saver': 2.0.7
+      denque: 2.1.0
+      file-saver: 2.0.5
+
+  '@pistonite/pure@0.23.1':
+    dependencies:
       denque: 2.1.0
       file-saver: 2.0.5
 

@@ -6,6 +6,9 @@ Bun.serve({
     routes: {
         "/": () => {
             return new Response(Bun.file("src/index.html"))
+        },
+        "/worker.js": () => {
+            return new Response(Bun.file("src/worker.js"))
         }
     }
 })

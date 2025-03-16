@@ -1,9 +1,9 @@
 import { once } from "@pistonite/pure/sync";
 import { errstr } from "@pistonite/pure/result";
 
-import { wxChannel, WxEnd, WxEndOptions, WxEndRecvFn } from "./WxEnd.ts"
+import { wxChannel, WxEnd, WxEndOptions, WxEndRecvFn, wxMakeEnd } from "./WxEnd.ts"
 import { wxFail, WxResult, WxVoid } from "./WxError.ts"
-import { isWxMessageEvent, wxFuncClose, wxFuncHello, wxInternalProtocol, WxMessage } from "./WxMessage.ts";
+import { wxMakeMessageController, isWxMessageEvent, wxFuncClose, wxInternalProtocol, WxMessage } from "./WxMessage.ts";
 
 /**
  * Things that looks like a `Window`
@@ -177,10 +177,11 @@ export const wxWindow = (): WxResult<WxWindow> => {
 const createOwnerFnFor = (ownerWindow: WindowLike, origin: string): WxWindow["owner"] => {
     return once({
         fn: async (ownerOrigin: string, onRecv: WxEndRecvFn, options?: WxEndOptions): Promise<WxResult<WxEnd>> => {
-            if (wxSameContextGlobalEndCreator in globalThis) {
-                const globalEndCreator = (globalThis as any)[wxSameContextGlobalEndCreator];
-                (globalThis as any)[wxSameContextGlobalEndCreator] = undefined;
-                if (origin === ownerOrigin) {
+            // same origin, get the global end creator from the owner
+            if (origin === ownerOrigin) {
+                if (wxSameContextGlobalEndCreator in globalThis) {
+                    const globalEndCreator = (globalThis as any)[wxSameContextGlobalEndCreator];
+                    (globalThis as any)[wxSameContextGlobalEndCreator] = undefined;
                     if (globalEndCreator && typeof globalEndCreator === "function") {
                         try {
                             const end: WxResult<WxEnd> = await globalEndCreator(onRecv);
@@ -193,102 +194,40 @@ const createOwnerFnFor = (ownerWindow: WindowLike, origin: string): WxWindow["ow
                     }
                 }
                 console.warn("[workex] same-origin same-context linking failed, falling back to postMessage");
-            }
-            
-            const controller = new AbortController();
-            try {
-                (globalThis as unknown as WindowLike).addEventListener("message", (event: unknown) => {
-                    if (!isWxMessageEvent(event)) {
-                        return;
-                    }
-                    if (event.data.p !== wxInternalProtocol) {
-                        onRecv(event.data);
-                    }
-                }, { signal: controller.signal });
-            } catch (e) {
-                console.error(e);
                 return {
-                    err: wxFail("Failed to addEventListener to Window: " + errstr(e))
+                    err: wxFail("Same-origin same-context linking failed")
                 }
             }
 
-            // initiate handshake
-            const helloPromise = new Promise<WxVoid>((resolve) => {
-                try {
-                    const controller = new AbortController();
+            // cross-origin
+            const controller = wxMakeMessageController(
+                true,
+                options?.timeout,
+                onRecv,
+                (handler, signal) => {
+                    // messages from the target window will be posted to globalThis (shared
+                    // with all windows), so we must route it according to event.source
                     (globalThis as unknown as WindowLike).addEventListener("message", (event: unknown) => {
-                        if (!isWxMessageEvent(event)) {
-                            return;
+                        if (event && (event as any).source === ownerWindow) {
+                            handler(event);
                         }
-                        if (event.data.p === wxInternalProtocol && event.data.f === wxFuncHello) {
-                            resolve({});
-                            controller.abort();
-                        }
-                    }, { signal: controller.signal });
-                } catch (e) {
-                    console.error(e);
-                    return resolve({
-                        err: wxFail("Failed to addEventListener to Window: " + errstr(e))
-                    })
-                };
-            });
-    
-            let done = false;
-            let count = 0;
-            const send = () => {
-                if (done) {
-                    return;
+                    }, { signal });
+                },
+                (message: WxMessage) => {
+                    ownerWindow.postMessage(message, ownerOrigin);
                 }
-                count++;
-                ownerWindow.postMessage({ 
-                    s: wxInternalProtocol,
-                    p: wxInternalProtocol,
-                    m: 1,
-                    f: wxFuncHello,
-                    d: "hello"
-                }, ownerOrigin);
-                if (count < 20) {
-                    setTimeout(send, 50);
-                    return;
-                }
-                setTimeout(send, 1000);
-            };
-            send();
-        
-            const timeout = options?.timeout ?? 60000;
-            const notice1 = setTimeout(() => {
-                console.warn("[workex] connection has not been established after 1 second!");
-            }, 1000);
-            const notice2 = setTimeout(() => {
-                console.warn("[workex] connection has not been established after 5 seconds!");
-            }, 5000);
-            const notice3 = setTimeout(() => {
-                console.warn("[workex] connection has not been established after 10 seconds! (this is the last warning)");
-            }, 10000);
-            const result = await Promise.race([
-                helloPromise,
-                new Promise<WxVoid>((resolve) => {
-                    setTimeout(() => {
-                        controller.abort();
-                        resolve({ err: {
-                            code: "HandshakeTimeout",
-                            message: `Timeout after ${timeout}ms`
-                        } });
-                    }, timeout);
-                })
-            ]);
-            done = true;
-            clearTimeout(notice1);
-            clearTimeout(notice2);
-            clearTimeout(notice3);
-    
-            if (result.err) {
-                return result;
+            );
+            if (controller.err) {
+                return controller;
             }
 
-            const end: WxEnd = {
-                close: () => {
-                    // send close message to owner to let it close us
+            const { start, isClosed } = controller.val;
+            await start();
+
+            const end = wxMakeEnd(
+                (message) => ownerWindow.postMessage(message, ownerOrigin),
+                () => {
+                    // try let the other side close us
                     ownerWindow.postMessage({
                         s: wxInternalProtocol,
                         p: wxInternalProtocol,
@@ -297,16 +236,14 @@ const createOwnerFnFor = (ownerWindow: WindowLike, origin: string): WxWindow["ow
                         d: "close"
                     }, ownerOrigin);
                 },
-                send: (message: WxMessage) => {
-                    ownerWindow.postMessage(message, ownerOrigin);
-                }
-            };
-            
+                isClosed
+            );
             return { val: end };
         }
     });
 }
 
+/** Helper to link to a Window object */
 const linkToTargetWindow = (
     selfOrigin: string,
     targetWindow: WindowLike, 
@@ -315,20 +252,11 @@ const linkToTargetWindow = (
     close: () => void,
     options?: WxEndOptions
 ): Promise<WxResult<WxEnd>> => {
-    const messagingEnd = {
-        send: (message: WxMessage) => {
-            targetWindow.postMessage(message, targetOrigin);
-        },
-        close
-    };
-
-    let theController: AbortController | undefined = undefined;
-
     // setting the global end creator for same-origin same-context linking
     // this should be fine (no race condition) because if this is doable,
     // then the other window can't possibly start execute until this function is done
-    const helloPromise = new Promise<WxResult<WxEnd>>((resolve) => {
-        if (targetOrigin === selfOrigin) {
+    if (targetOrigin === selfOrigin) {
+        return new Promise<WxResult<WxEnd>>((resolve) => {
             try {
                 (targetWindow as any)[wxSameContextGlobalEndCreator] = (onRecvB: WxEndRecvFn) => {
                     const [endA, endB] = wxChannel(onRecv, onRecvB);
@@ -343,75 +271,55 @@ const linkToTargetWindow = (
                 return;
             } catch (e) {
                 console.error(e);
+                resolve({
+                    err: wxFail("Failed to create same-context linking: " + errstr(e))
+                });
             }
-        }
-        console.warn("[workex] same-origin same-context linking failed, falling back to postMessage");
-        const overallController = new AbortController();
-        theController = overallController;
-        try {
-            (globalThis as unknown as WindowLike).addEventListener("message", (event: unknown) => {
-                if (!isWxMessageEvent(event)) {
-                    return;
-                }
-                if (event.data.p !== wxInternalProtocol) {
-                    onRecv(event.data);
-                }
-            }, { signal: overallController.signal });
-        } catch (e) {
-            console.error(e);
-            return {
-                err: wxFail("Failed to addEventListener to Worker: " + errstr(e))
-            }
-        }
-        
-        // wait for handshake
-        try {
-            const controller = new AbortController();
-            (globalThis as unknown as WindowLike).addEventListener("message", (event: unknown) => {
-                if (!isWxMessageEvent(event)) {
-                    return;
-                }
-                if (event.data.p === wxInternalProtocol && event.data.f === wxFuncHello) {
-                    resolve({val: messagingEnd});
-                    controller.abort();
-                }
-            }, { signal: controller.signal });
-        } catch (e) {
-            console.error(e);
-            return resolve({
-                err: wxFail("Failed to addEventListener to Window: " + errstr(e))
-            })
-        };
-    });
-    const timeout = options?.timeout ?? 60000;
-    const notice1 = setTimeout(() => {
-        console.warn("[workex] connection has not been established after 1 second!");
-    }, 1000);
-    const notice2 = setTimeout(() => {
-        console.warn("[workex] connection has not been established after 5 seconds!");
-    }, 5000);
-    const notice3 = setTimeout(() => {
-        console.warn("[workex] connection has not been established after 10 seconds! (this is the last warning)");
-    }, 10000);
+        });
+    }
 
-    const continuation = async () => {
-        const result = await Promise.race([
-            helloPromise,
-            new Promise<WxResult<WxEnd>>((resolve) => {
-                setTimeout(() => {
-                    theController?.abort();
-                    resolve({ err: {
-                        code: "HandshakeTimeout",
-                        message: `Timeout after ${timeout}ms`
-                    } });
-                }, timeout);
-            })
-        ]);
-        clearTimeout(notice1);
-        clearTimeout(notice2);
-        clearTimeout(notice3);
-        return result;
-    };
-    return continuation();
+    return linkToTargetWindowCrossOrigin(targetWindow, targetOrigin, onRecv, close, options);
+}
 
+const linkToTargetWindowCrossOrigin = async (
+    targetWindow: WindowLike, 
+    targetOrigin: string, 
+    onRecv: WxEndRecvFn, 
+    closeWindow: () => void,
+    options?: WxEndOptions
+): Promise<WxResult<WxEnd>> => {
+    const controller = wxMakeMessageController(
+        false,
+        options?.timeout,
+        onRecv,
+        (handler, signal) => {
+            // messages from the target window will be posted to globalThis (shared
+            // with all windows), so we must route it according to event.source
+            (globalThis as unknown as WindowLike).addEventListener("message", (event: unknown) => {
+                if (event && (event as any).source === targetWindow) {
+                    handler(event);
+                }
+            }, { signal });
+        },
+        (message: WxMessage) => {
+            targetWindow.postMessage(message, targetOrigin);
+        }
+    );
+
+    if (controller.err) {
+        return controller;
+    }
+
+    const { start, close: closeController, isClosed } = controller.val;
+    await start();
+
+    const end = wxMakeEnd(
+        (mesasge) => targetWindow.postMessage(mesasge, targetOrigin),
+        () => {
+            closeController();
+            closeWindow();
+        },isClosed
+    );
+
+    return { val: end };
 }
