@@ -29,5 +29,3 @@ An example directory tree might look like this after running workex:
   - client.ts
   - worker.ts
 ```
-
-

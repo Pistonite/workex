@@ -26,6 +26,14 @@ export type Wec =
     | "UnknownProtocol"
     /** An error is caught at the bus level in the handler on the other end */
     | "Catch"
+    /** If multiple connection of the same protocol are configured on the same bus */
+    | "DuplicateProtocol"
+    /** The data field in a request is invalid */
+    | "InvalidRequestData"
+    /** Calling the other side with a bad function id */
+    | "UnknownFunction"
+    /** The handler did not return anything */
+    | "NoReturn"
     
     ;
 

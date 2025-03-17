@@ -32,7 +32,7 @@ the BUS to make it more workable:
   be passed on the other side. The BUS will then be able to connect them,
   and give the first side a `Bar` proxy and the second side a `Foo` proxy
 - This means `Foo` cannot be connected to other interfaces, and only one `Foo-Bar` connection
-  can be opened per BUS. The other direction can be opened on the same bus, but it's not recommended.
+  can be opened per BUS.
 - Other interfaces in the same protocol cannot be added to the same BUS. For example, if the CLI tool
   processed 4 interfaces (2 pairs), only one of those 2 pairs can be added to a BUS.
   - i.e. one pair per protocol.

@@ -2,8 +2,8 @@ import { once } from "@pistonite/pure/sync";
 import { errstr } from "@pistonite/pure/result";
 
 import { wxChannel, WxEnd, WxEndOptions, WxEndRecvFn, wxMakeEnd } from "./WxEnd.ts"
-import { wxFail, WxResult, WxVoid } from "./WxError.ts"
-import { wxMakeMessageController, isWxMessageEvent, wxFuncClose, wxInternalProtocol, WxMessage } from "./WxMessage.ts";
+import { wxFail, WxResult } from "./WxError.ts"
+import { wxMakeMessageController, wxFuncClose, wxInternalProtocol, WxMessage } from "./WxMessage.ts";
 
 /**
  * Things that looks like a `Window`
@@ -46,12 +46,12 @@ export type WxWindow = {
     /**
      * Open a Popup window and create a {@link WxEnd} for messaging to that window
      */
-    openPopup(url: string, onRecv: WxEndRecvFn, options?: WxWindowOpenOptions): Promise<WxResult<WxEnd>>;
+    popup(url: string, onRecv: WxEndRecvFn, options?: WxWindowOpenOptions): Promise<WxResult<WxEnd>>;
 
     /**
      * Create a {@link WxEnd} for messaging to an iframe
      */
-    connectFrame(iframe: IFrameLike, onRecv: WxEndRecvFn, options?: WxFrameLinkOptions): Promise<WxResult<WxEnd>>;
+    frame(iframe: IFrameLike, onRecv: WxEndRecvFn, options?: WxFrameLinkOptions): Promise<WxResult<WxEnd>>;
 }
 
 export type WxWindowOpenOptions = WxEndOptions & {
@@ -107,7 +107,7 @@ export const wxWindow = (): WxResult<WxWindow> => {
         owner = () => Promise.resolve({ err: { code: "NoOwnerForWindow" } });
     }
 
-    const openPopup = async (url: string, onRecv: WxEndRecvFn, options?: WxWindowOpenOptions): Promise<WxResult<WxEnd>> => {
+    const popup = async (url: string, onRecv: WxEndRecvFn, options?: WxWindowOpenOptions): Promise<WxResult<WxEnd>> => {
         let targetOrigin: string;
         try {
             targetOrigin = new URL(url).origin;
@@ -149,7 +149,7 @@ export const wxWindow = (): WxResult<WxWindow> => {
         return await linkToTargetWindow(selfOrigin, targetWindow, targetOrigin, onRecv, close, options);
     };
 
-    const connectFrame = async (iframe: IFrameLike, onRecv: WxEndRecvFn, options?: WxFrameLinkOptions): Promise<WxResult<WxEnd>> => {
+    const frame = async (iframe: IFrameLike, onRecv: WxEndRecvFn, options?: WxFrameLinkOptions): Promise<WxResult<WxEnd>> => {
         let targetOrigin: string;
         try {
             targetOrigin = new URL(iframe.src).origin;
@@ -167,8 +167,8 @@ export const wxWindow = (): WxResult<WxWindow> => {
 
     wxWindowGlobal = {
         owner,
-        openPopup,
-        connectFrame
+        popup,
+        frame
     };
 
     return { val: wxWindowGlobal };

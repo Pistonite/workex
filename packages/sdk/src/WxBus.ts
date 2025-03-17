@@ -21,39 +21,72 @@ export type WxProtocolConfig = {
     [name: string]: WxProtocolBindConfig<any>;
 }
 
+/** Configuration generated with the CLI tool */
 export type WxProtocolBindConfig<TSender> = {
-    bindSend: (sender: WxBusSender) => TSender,
+    /** Name of the protocol (generated using --protocol flag) */
+    protocol: string,
+    /** 
+     * The protocol interfaces. The first should match TSender, the second
+     * is the interface TSender is linked to
+     */
+    interfaces: [string, string],
+    /** Handle for receiving remote calls */
     recvHandler: WxBusRecvHandler,
+    /** Create send wrapper that implements the sender interface */
+    bindSend: (sender: WxBusSender) => TSender,
 }
 
-export type WxBusRecvHandler = (fId: number, data: unknown) => Promise<unknown>;
+export type WxBusRecvHandler = (fId: number, data: unknown[]) => Promise<WxResult<unknown>>;
 
 export type WxProtocolOutput<TConfig extends WxProtocolConfig> = {
     [K in keyof TConfig]: TConfig[K] extends WxProtocolBindConfig<infer TSender> ? TSender : never;
 }
 
-export type WxBusCreator<TConfig extends WxProtocolConfig> = 
-(config: TConfig) => Promise<WxResult<WxProtocolOutput<TConfig>>>;
+export type WxBusCreator =
+<TConfig extends WxProtocolConfig> (config: TConfig) => Promise<WxResult<WxProtocolOutput<TConfig>>>;
 
 export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
     isActiveSide: boolean,
     endCreator: (onRecv: WxEndRecvFn) => Promise<WxResult<WxEnd>>, 
     config: TConfig,
-    timeout: number
+    timeout?: number
 ): Promise<WxResult<WxProtocolOutput<TConfig>>> => {
+    if (!timeout || timeout < 0) {
+        timeout = 60000;
+    }
     // extract configuration
-    const protocols: string[] = [];
+    const protocols = new Set<string>();
+    const protocolQuery: string[] = [];
+    const protocolToVariableKey: Record<string, string> = {};
     const protocolToHandler: Record<string, WxBusRecvHandler> = {};
     const protocolToBindSender: Record<string, (sender: WxBusSender) => unknown> = {};
     for (const p in config) {
-        const { bindSend, recvHandler } = config[p];
-        protocols.push(p);
-        protocolToHandler[p] = recvHandler;
-        protocolToBindSender[p] = bindSend;
+        const { protocol, interfaces, bindSend, recvHandler } = config[p];
+        if (protocols.has(protocol)) {
+            return {
+                err: {
+                    code: "DuplicateProtocol",
+                    message: `Duplicate protocol: ${protocol}`
+                }
+            }
+        }
+        protocols.add(protocol);
+
+        // format query as PASSIVE->ACTIVE, where
+        // PASSIVE/ACITVE are the side that implements the interface
+        const [typeSend, typeRecv] = interfaces;
+        if (isActiveSide) {
+            protocolQuery.push(`${protocol}:${typeSend}->${typeRecv}`);
+        } else {
+            protocolQuery.push(`${protocol}:${typeRecv}->${typeSend}`);
+        }
+        protocolToHandler[protocol] = recvHandler;
+        protocolToBindSender[protocol] = bindSend;
+        protocolToVariableKey[protocol] = p;
     }
     // sort the protocols. Since the input is an object, the order is not guaranteed
     // and should not matter in protocol agreement
-    protocols.sort();
+    protocolQuery.sort();
 
     // === Bus receive side handler ===
     // This handles:
@@ -72,13 +105,13 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
         if (p === wxInternalProtocol) {
             // protocol agreement
             if (f === wxFuncProtocol) {
-                const receivedProtocols = d as string[];
+                const receivedQuery = d as string[];
                 if (m === 0) {
                     // query
                     const res = end.send({
                         s: wxInternalProtocol,
                         p: wxInternalProtocol,
-                        m: shallowEqual(protocols, receivedProtocols) ? 1 : 2, // agree or disagree
+                        m: shallowEqual(protocolQuery, receivedQuery) ? 1 : 2, // agree or disagree
                         f: wxFuncProtocol, 
                         d: protocols
                     });
@@ -92,7 +125,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
                     // disagree
                     resolveProtocol({ err: {
                         code: "ProtocolDisagree",
-                        message: `received: ${receivedProtocols.join(", ")}, expected: ${protocols.join(", ")}}`
+                        message: `received: ${receivedQuery.join(", ")}, expected: ${protocolQuery.join(", ")}}`
                     }});
                 }
                 return;
@@ -144,26 +177,59 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
 
         // other side sending a request
         let sendResult: WxResult<unknown>;
-        try {
-            const result = await handler(f, d);
+        if (!d || !Array.isArray(d)) {
+            console.warn(`[workex] bus received invalid data for a request`);
             sendResult = end.send({
                 s: wxInternalProtocol,
                 p,
                 m,
-                f: wxFuncReturn,
-                d: result
-            });
-        } catch (e) {
-            sendResult = end.send({
-                s: wxInternalProtocol,
-                p,
-                m,
-                f: wxFuncReturn,
+                f: wxFuncReturnError,
                 d: {
-                    code: "Catch",
-                    message: errstr(e)
+                    code: "InvalidRequestData",
                 } satisfies WxError
             });
+        } else {
+            try {
+                const result = await handler(f, d);
+                if (!result) {
+                    sendResult = end.send({
+                        s: wxInternalProtocol,
+                        p,
+                        m,
+                        f: wxFuncReturnError,
+                        d: {
+                            code: "NoReturn",
+                        } satisfies WxError
+                    });
+                } else if (result.err) {
+                    sendResult = end.send({
+                        s: wxInternalProtocol,
+                        p,
+                        m,
+                        f: wxFuncReturnError,
+                        d: result.err
+                    });
+                } else {
+                    sendResult = end.send({
+                        s: wxInternalProtocol,
+                        p,
+                        m,
+                        f: wxFuncReturn,
+                        d: result
+                    });
+                }
+            } catch (e) {
+                sendResult = end.send({
+                    s: wxInternalProtocol,
+                    p,
+                    m,
+                    f: wxFuncReturnError,
+                    d: {
+                        code: "Catch",
+                        message: errstr(e)
+                    } satisfies WxError
+                });
+            }
         }
 
         if (sendResult.err?.code === "Closed") {
@@ -191,7 +257,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
             p: wxInternalProtocol,
             m: 0,
             f: wxFuncProtocol,
-            d: protocols
+            d: protocolQuery
         });
         if (res.err) {
             console.error(`[workex] bus failed to query protocols, communication not established!`);
@@ -217,12 +283,12 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
     // create the sender and link to the protocols
     const sender = new WxBusSender(end, pendingMessages, timeout);
 
-    const protocolToSender: Record<string, unknown> = {};
-    for (const p in protocolToBindSender) {
-        protocolToSender[p] = protocolToBindSender[p](sender);
+    const keyToSender: Record<string, unknown> = {};
+    for (const protocol in protocolToBindSender) {
+        keyToSender[protocolToVariableKey[protocol]] = protocolToBindSender[protocol](sender);
     }
 
-    return { val: protocolToSender as WxProtocolOutput<TConfig> };
+    return { val: keyToSender as WxProtocolOutput<TConfig> };
 }
 
 export class WxBusSender {
@@ -242,8 +308,8 @@ export class WxBusSender {
         this.timeout = timeout;
     }
 
-    public async sendVoid<TArgs>(protocol: string, fId: number, data: TArgs): WxPromise<void> {
-        const result = await this.send<TArgs, unknown>(protocol, fId, data);
+    public async sendVoid(protocol: string, fId: number, data: unknown[]): WxPromise<void> {
+        const result = await this.send(protocol, fId, data);
         if (result.err) {
             return result;
         }
@@ -251,7 +317,7 @@ export class WxBusSender {
         return {};
     }
 
-    public async send<TArgs, TReturn>(protocol: string, fId: number, data: TArgs): Promise<WxResult<TReturn>> {
+    public async send<TReturn>(protocol: string, fId: number, data: unknown[]): Promise<WxResult<TReturn>> {
         const mIdRes = this.nextMId();
         if (mIdRes.err) {
             return mIdRes;

@@ -1,6 +1,11 @@
 # Summary
 
 - [Setup](./setup.md)
+- [Tutorial](./tutorial/index.md)
+  - [Project Setup](./tutorial/project_setup_g.md)
+  - [Define Interfaces](./tutorial/define_interfaces_g.md)
+  - [Generate Code](./tutorial/running_cli.md)
+  - [Using Generated Code](./tutorial/usage.md)
 - [TS Config](./tsconfig.md)
 - [TS Interface Input](./input.md)
 - [Output](./output.md)
