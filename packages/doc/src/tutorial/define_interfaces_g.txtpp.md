@@ -32,12 +32,17 @@ the parsing
 ```
 
 ```admonish warning
-The generated files currently copy-paste the same `import` statements from the input
-files. When you have multiple interfaces in one file, it's possible that
-some imports are unused in the output and may cause an error. A workaround
-is to split the input file into one interface per file.
+There are some restrictions on syntax that can be used in the interfaces:
 
-This may be improved in the future
+- Property signatures are not supported, only methods (change `foo: () => Bar` to `foo(): Bar`)
+- Interface type parameters and inheritance are not supported
+- Method type parameters are not supported
+- The generated files currently copy-paste the same `import` statements from the input
+  files. When you have multiple interfaces in one file, it's possible that
+  some imports are unused in the output and may cause an error. A workaround
+  is to split the input file into one interface per file.
+
+These may be improved in the future
 ```
 
 ```admonish tip

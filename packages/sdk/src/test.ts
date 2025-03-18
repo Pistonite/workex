@@ -1,16 +1,16 @@
 import { Bar, TestFoo } from "./input";
-import { WxBusRecvHandler, WxBusSender, WxProtocolBindConfig } from "./WxBus";
+import { WxBusRecvHandler, WxProtocolBoundSender, WxProtocolBindConfig } from "./WxBus";
 
 import { _wxRecvImpl } from "./TestFoo.ts";
 
 // interfaces/Bar.ts
 export class _wxSenderImpl implements Bar {
-    private sender: WxBusSender;
-    constructor(sender: WxBusSender) {
+    private sender: WxProtocolBoundSender;
+    constructor(sender: WxProtocolBoundSender) {
         this.sender = sender;
     }
     doSomething(a: Test, c?: number | undefined) {
-        return this.sender.send<string>("testproto", 16, [a, c]);
+        return this.sender.send<string>(16, [a, c]);
     }
 }
 

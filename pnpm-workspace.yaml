@@ -6,6 +6,7 @@ packages:
   - packages/example-standalone
   - packages/example-vite
   - packages/example-multiwindow
+  - packages/example-tutorial
 onlyBuiltDependencies:
   - '@swc/core'
   - esbuild

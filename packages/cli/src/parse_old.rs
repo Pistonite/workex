@@ -117,7 +117,7 @@ impl<'a, 'b> ParseFile<'a, 'b> {
             .ok_or_else(|| report!(Error::Filename).attach_printable(format!("Path: {path}")))?
             .to_string();
 
-        if filename.ends_with("recv.ts") || filename.ends_with("send.ts") {
+        if filename.ends_with(".recv.ts") || filename.ends_with(".send.ts") {
             return Err(report!(Error::Filename).attach_printable(format!("Path: {path}")))
             .attach_printable("File name cannot end with `recv.ts` or `send.ts` as they are reserved for output files");
         }
@@ -314,19 +314,6 @@ impl<'a, 'b> ParseFile<'a, 'b> {
         ParseInterface::from(self, &mut output).parse(&interface.body.body);
 
         Some(output)
-    }
-
-    fn emit_error<T: std::fmt::Display>(&mut self, span: Span, msg: T) {
-        self.handler
-            .struct_span_err(span, &format!("[workex] {msg}"))
-            .emit();
-        self.errors += 1;
-    }
-
-    fn parse_comments_at_pos(&self, pos: BytePos) -> CommentBlock {
-        self.comments
-            .with_leading(pos, parse_comment)
-            .unwrap_or_default()
     }
 }
 

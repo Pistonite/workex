@@ -58,5 +58,10 @@ directory. You can turn it off with `--no-gitignore`.
 ```admonish tip
 The generated files should be ignored from check tools like ESLint or Prettier.
 See [ESLint Documentation](https://eslint.org/docs/latest/use/configure/ignore)
-or [Prettier Documentation](https://prettier.io/docs/en/ignore.html)
+or [Prettier Documentation](https://prettier.io/docs/en/ignore.html). The tool
+doesn't emit any disable directives because they might cause issues, for example
+with ESLint's `--report-unused-directives` option.
+
+If you don't mean to git-ignore the output, you can also use a wrapper command
+to call the CLI then run prettier or other formatter automatically on the output
 ```

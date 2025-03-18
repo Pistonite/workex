@@ -33,7 +33,7 @@ export type WxProtocolBindConfig<TSender> = {
     /** Handle for receiving remote calls */
     recvHandler: WxBusRecvHandler,
     /** Create send wrapper that implements the sender interface */
-    bindSend: (sender: WxBusSender) => TSender,
+    bindSend: (sender: WxProtocolBoundSender) => TSender,
 }
 
 export type WxBusRecvHandler = (fId: number, data: unknown[]) => Promise<WxResult<unknown>>;
@@ -285,13 +285,41 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
 
     const keyToSender: Record<string, unknown> = {};
     for (const protocol in protocolToBindSender) {
-        keyToSender[protocolToVariableKey[protocol]] = protocolToBindSender[protocol](sender);
+        keyToSender[protocolToVariableKey[protocol]] = protocolToBindSender[protocol](new WxProtocolBoundSenderImpl(sender, protocol));
     }
 
     return { val: keyToSender as WxProtocolOutput<TConfig> };
 }
 
-export class WxBusSender {
+export type WxProtocolBoundSender = {
+    sendVoid(fId: number, data: unknown[]): WxPromise<void>;
+    send<TReturn>(fId: number, data: unknown[]): WxPromise<TReturn>;
+}
+
+class WxProtocolBoundSenderImpl implements WxProtocolBoundSender {
+    private sender: WxBusSender;
+    private protocol: string;
+
+    constructor(sender: WxBusSender, protocol: string) {
+        this.sender = sender;
+        this.protocol = protocol;
+    }
+
+    public async sendVoid(fId: number, data: unknown[]): WxPromise<void> {
+        const result = await this.sender.send(this.protocol, fId, data);
+        if (result.err) {
+            return result;
+        }
+        // make sure random "val" values don't get leaked
+        return {};
+    }
+
+    public async send<TReturn>(fId: number, data: unknown[]): WxPromise<TReturn> {
+        return this.sender.send<TReturn>(this.protocol, fId, data);
+    }
+}
+
+class WxBusSender {
     private end: WxEnd;
     private pendingMessages: Map<number, (value: WxResult<unknown>) => void>;
     private timeout: number;
@@ -308,16 +336,7 @@ export class WxBusSender {
         this.timeout = timeout;
     }
 
-    public async sendVoid(protocol: string, fId: number, data: unknown[]): WxPromise<void> {
-        const result = await this.send(protocol, fId, data);
-        if (result.err) {
-            return result;
-        }
-        // make sure random "val" values don't get leaked
-        return {};
-    }
-
-    public async send<TReturn>(protocol: string, fId: number, data: unknown[]): Promise<WxResult<TReturn>> {
+    public async send<TReturn>(protocol: string, fId: number, data: unknown[]): WxPromise<TReturn> {
         const mIdRes = this.nextMId();
         if (mIdRes.err) {
             return mIdRes;
@@ -345,7 +364,7 @@ export class WxBusSender {
         });
 
         const result = await Promise.race([responsePromise, timeoutPromise]);
-        return result as WxResult<TReturn>;
+        return result as Awaited<WxPromise<TReturn>>;
     }
 
     private nextMId(): WxResult<number> {
