@@ -16,10 +16,6 @@ pub struct Interface {
     /// file
     pub impl_imports: ir::ImplImports,
 
-    /// Import statements from the source file, adjusted to use in the generated bus implementation
-    /// file
-    pub bus_imports: ir::BusImports,
-
     /// All functions in the interface, sorted by name
     pub functions: Vec<ir::Function>,
 }
@@ -32,14 +28,12 @@ impl Interface {
         imports: ir::Imports,
         functions: Vec<ir::Function>,
     ) -> Self {
-        let impl_imports = ir::ImplImports::new(imports.clone());
-        let bus_imports = ir::BusImports::new(imports);
+        let impl_imports = ir::ImplImports::new(imports);
         Self {
             name,
             filename,
             comment,
             impl_imports,
-            bus_imports,
             functions,
         }
     }

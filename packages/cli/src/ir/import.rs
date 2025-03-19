@@ -30,28 +30,6 @@ impl ImplImports {
     }
 }
 
-/// Imports used in the generated bus implementation files
-#[derive(Debug, Deref, DerefMut)]
-pub struct BusImports {
-    #[deref]
-    #[deref_mut]
-    inner: Imports,
-
-    /// Identifier for `WxProtocolBindConfig`
-    pub ident_wxconfig: String,
-}
-
-impl BusImports {
-    pub fn new(mut imports: Imports) -> Self {
-        let (_, ident_wxconfig) = imports.add_workex_type_import("WxProtocolBindConfig");
-        imports.adjust_relative_to_from_parent();
-        Self {
-            inner: imports,
-            ident_wxconfig,
-        }
-    }
-}
-
 /// All import statements in a module
 #[derive(Debug, Clone)]
 pub struct Imports {
@@ -177,7 +155,7 @@ impl Import {
                 from,
             } => cblock! {
                 if *is_type { "import type {" } else { "import {" }, [
-                clist!("," => idents.iter().map(|x| x.to_repr())).inlined()
+                clist!("," => idents.iter().map(|x| x.to_repr(*is_type))).inlined()
             ], format!("}} from \"{}\";", from)
             }
             .into(),
@@ -197,13 +175,13 @@ pub struct ImportIdent {
 }
 
 impl ImportIdent {
-    pub fn to_repr(&self) -> String {
+    pub fn to_repr(&self, is_in_type_import: bool) -> String {
         let name_part = if let Some(rename) = &self.rename {
             format!("{} as {rename}", self.ident)
         } else {
             self.ident.clone()
         };
-        if self.is_type {
+        if self.is_type && !is_in_type_import {
             format!("type {name_part}")
         } else {
             name_part

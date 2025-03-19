@@ -18,6 +18,7 @@ import { wxFuncProtocol, wxFuncReturn, wxFuncReturnError, wxInternalProtocol, Wx
  * - `foo` will the name of the variable in the output object
  */
 export type WxProtocolConfig = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [name: string]: WxProtocolBindConfig<any>;
 }
 
@@ -36,7 +37,7 @@ export type WxProtocolBindConfig<TSender> = {
     bindSend: (sender: WxProtocolBoundSender) => TSender,
 }
 
-export type WxBusRecvHandler = (fId: number, data: unknown[]) => Promise<WxResult<unknown>>;
+export type WxBusRecvHandler = (fId: number, data: unknown[]) => WxPromise<unknown> | WxPromise<void>;
 
 export type WxProtocolOutput<TConfig extends WxProtocolConfig> = {
     [K in keyof TConfig]: TConfig[K] extends WxProtocolBindConfig<infer TSender> ? TSender : never;

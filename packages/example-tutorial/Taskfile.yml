@@ -1,0 +1,9 @@
+version: '3'
+
+tasks:
+
+  gen:
+    desc: Generate src files using workex built from local workspace
+    cmds:
+      - cargo run --bin workex -- src/Interfaces.ts -p testapp -l AppSide,WorkerSide
+      - pnpm exec tsc

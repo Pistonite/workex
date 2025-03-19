@@ -221,6 +221,13 @@ impl<'a, 'b> InterfaceContext<'a, 'b> {
             );
             return None;
         }
+
+        // disallow empty interface - they should use the builtin stub instead
+        if item.body.body.is_empty() {
+            self.emit_error(item.span, "empty interfaces are not allowed. If you want a one-direction connection, simply omit the --link option for your interface.");
+            return None;
+        }
+
         let mut functions = BTreeMap::new();
 
         for member in &item.body.body {
@@ -235,12 +242,6 @@ impl<'a, 'b> InterfaceContext<'a, 'b> {
                     );
                 }
             }
-        }
-
-        // disallow empty interface - they should use the builtin stub instead
-        if functions.is_empty() {
-            self.emit_error(item.span, "empty interfaces are not allowed. If you want a one-direction connection, simply omit the --link option for your interface.");
-            return None;
         }
 
         Some(ir::Interface::new(

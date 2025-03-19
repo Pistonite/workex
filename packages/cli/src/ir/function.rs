@@ -22,7 +22,7 @@ impl Function {
 
         let function_decl = cblock! {
             format!("public {}(", self.name),
-            [clist!("," => self.args.iter().map(|arg| arg.to_code()))],
+            [clist!("," => self.args.iter().map(|arg| arg.to_code())).inlined()],
             format!("): {}{}", ident_wxpromise, self.retty_ann)
         };
 
@@ -34,7 +34,7 @@ impl Function {
                 } else {
                     format!("return this.sender.send{}({}, [", self.retty_ann, funcid_expr)
                 },
-                [clist!("," => self.args.iter().map(|arg| arg.ident.as_str()))],
+                [clist!("," => self.args.iter().map(|arg| arg.ident.as_str())).inlined()],
                 "]);"
             }],
             "}"
@@ -46,6 +46,13 @@ impl Function {
     }
 
     /// Generate code for implementation in the receiver "switch" statement
+    ///
+    /// Note the implementation uses switch statement. In my testing,
+    /// switch statement is much faster than an array of functions even for 30 functions,
+    /// in both JSC (bun) and V8 (deno). Since it's unlikely for me to write more than 30 functions
+    /// in a single interface, we only use switch statement for now. However it will be interesting
+    /// to see in the future at how many functions does the array of functions becomes better on
+    /// average
     pub fn to_recv_switch_case(&self, funcid_expr: &str) -> Code {
         let arg_list = clist!("," => (0..self.args.len()).map(|x| format!("a{x}"))).inlined();
         let call: Code = if self.args.is_empty() {
