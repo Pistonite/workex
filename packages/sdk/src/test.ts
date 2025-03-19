@@ -28,12 +28,25 @@ export const _wxRecvImpl = (handler: Bar): WxBusRecvHandler => {
 
 
 // interfaces/Bar.bus.ts -> Bar.ts, TestFoo.ts ../Bar.ts, ../TestFoo.ts
-export const testprotoBar = (handler: TestFoo): WxProtocolBindConfig<Bar> => {
+export const testprotoBar = (handler: TestFoo, resolve?: (impl: Bar) => (void | Promise<void>)): WxProtocolBindConfig<Bar> => {
     return {
         protocol: "testproto",
         interfaces: ["Bar", "TestFoo"],
         recvHandler: _wxRecvImpl(handler),
-        bindSend: (sender) => new _wxSenderImpl(sender),
+        bindSend: (sender) => {
+            const impl = new _wxSenderImpl(sender);
+            resolve?.(impl);
+            return impl;
+        },
+    }
+}
+
+export const testprotoBar = (): WxProtocolBindConfig<Record<string, never>> => {
+    return {
+        protocol: "testproto",
+        interfaces: ["Bar", "_wxStub"],
+        recvHandler: () => Promise.resolve({ err: { code: "UnexpectedStubCall" } }),
+        bindSend: () => ({}),
     }
 }
 

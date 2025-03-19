@@ -59,7 +59,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
     const protocolQuery: string[] = [];
     const protocolToVariableKey: Record<string, string> = {};
     const protocolToHandler: Record<string, WxBusRecvHandler> = {};
-    const protocolToBindSender: Record<string, (sender: WxBusSender) => unknown> = {};
+    const protocolToBindSender: Record<string, (sender: WxProtocolBoundSender) => unknown> = {};
     for (const p in config) {
         const { protocol, interfaces, bindSend, recvHandler } = config[p];
         if (protocols.has(protocol)) {

@@ -1,5 +1,4 @@
-use codize::{cconcat, Code};
-
+use codize::{Code, cconcat};
 
 /// A block of documentation comments
 #[derive(Debug, Default)]

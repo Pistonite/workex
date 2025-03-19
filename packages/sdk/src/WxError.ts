@@ -34,6 +34,8 @@ export type Wec =
     | "UnknownFunction"
     /** The handler did not return anything */
     | "NoReturn"
+    /** The stub handler in a one-direction protocol is being called unexpectedly */
+    | "UnexpectedStubCall"
     
     ;
 

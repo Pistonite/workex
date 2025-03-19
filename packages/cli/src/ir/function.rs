@@ -1,4 +1,4 @@
-use codize::{cblock, cconcat, clist, Code};
+use codize::{Code, cblock, cconcat, clist};
 
 use crate::ir;
 
@@ -38,16 +38,15 @@ impl Function {
                 "]);"
             }],
             "}"
-        }.connected().never_inlined();
+        }
+        .connected()
+        .never_inlined();
 
         cconcat!["", comment, function_decl, function_body].into()
     }
 
     /// Generate code for implementation in the receiver "switch" statement
-    pub fn to_recv_switch_case(
-        &self,
-        funcid_expr: &str,
-    ) -> Code {
+    pub fn to_recv_switch_case(&self, funcid_expr: &str) -> Code {
         let arg_list = clist!("," => (0..self.args.len()).map(|x| format!("a{x}"))).inlined();
         let call: Code = if self.args.is_empty() {
             format!("return handler.{}();", self.name).into()

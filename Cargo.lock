@@ -1468,7 +1468,6 @@ dependencies = [
  "swc_common",
  "swc_core",
  "swc_ecma_parser",
- "thiserror",
 ]
 
 [[package]]

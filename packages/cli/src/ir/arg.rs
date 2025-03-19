@@ -1,4 +1,3 @@
-
 /// An argument, with an identifier, type, and optional flag
 #[derive(Debug)]
 pub struct Arg {

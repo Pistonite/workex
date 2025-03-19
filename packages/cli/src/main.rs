@@ -1,14 +1,11 @@
-use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
+use anyhow::Context as _;
 use clap::Parser;
-use anyhow::{bail, Context};
 
-mod ir;
-
-mod parse;
-mod parse_old;
 mod emit;
+mod ir;
+mod parse;
 
 /// Workex CLI Tool
 #[derive(Debug, Parser)]
@@ -29,7 +26,7 @@ pub struct CliOptions {
     pub protocol: String,
 
     /// Prefix for generated functions. The generated function names will
-    /// be this prefix + the interface name. 
+    /// be this prefix + the interface name.
     ///
     /// Default is the same as protocol
     #[clap(long)]
@@ -59,58 +56,14 @@ fn main() -> ExitCode {
     }
 }
 
-fn main_internal() -> anyhow::Result<Error> {
+fn main_internal() -> anyhow::Result<()> {
     let cli = CliOptions::parse();
 
-    let out_dir = get_out_dir(&cli.inputs).context("Failed to get output directory")?;
-    let interfaces = parse::parse(&cli.inputs).change_context(Error::Parse)?;
+    let interfaces =
+        parse::load_interfaces_from_inputs(&cli.inputs).context("Failed to parse input files")?;
+    let package = ir::Package::try_new(&cli, interfaces)?;
 
-    let pkg = Package {
-        out_dir,
-        interfaces,
-    };
-
-    emit::emit(&pkg, &cli).change_context(Error::Emit)?;
-    println!("{} interfaces generated", pkg.interfaces.len());
+    emit::emit(&package).context("Failed to emit output")?;
+    println!("{} interfaces generated", package.interfaces.len());
     Ok(())
-}
-
-#[derive(Debug, thiserror::Error)]
-enum Error {
-    #[error("Invalid argument")]
-    InvalidArg,
-    #[error("Fail to parse inputs")]
-    Parse,
-    #[error("Fail to emit output")]
-    Emit,
-}
-
-fn get_out_dir(inputs: &[String]) -> anyhow::Result<PathBuf> {
-    let out_dir = match inputs.first() {
-        None => {
-            bail!("No input files provided");
-        }
-        Some(path) => get_parent_dir(path)?,
-    };
-    for input in inputs.iter().skip(1) {
-        let path = get_parent_dir(input)?;
-        if path != out_dir {
-            bail!("Input files are not in the same directory: {} and {}", out_dir.display(), path.display());
-        }
-    }
-    Ok(out_dir)
-}
-
-fn get_parent_dir(path: &str) -> anyhow::Result<PathBuf> {
-    let p = Path::new(path);
-
-    if !p.exists() {
-        bail!("Input file does not exist: {}", path);
-    }
-
-    let Some(parent) = p .parent() else {
-        bail!("Input file has no parent: {}", path);
-    };
-
-    Ok(dunce::canonicalize(parent).context("Failed to read parent directory of input file")?)
 }

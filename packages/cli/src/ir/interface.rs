@@ -40,7 +40,7 @@ impl Interface {
             comment,
             impl_imports,
             bus_imports,
-            functions
+            functions,
         }
     }
 }

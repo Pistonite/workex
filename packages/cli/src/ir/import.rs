@@ -1,4 +1,4 @@
-use codize::{cblock, clist, Code};
+use codize::{Code, cblock, cconcat, clist};
 use derive_more::{Deref, DerefMut};
 
 static WORKEX_IMPORT: &str = "@pistonite/workex";
@@ -19,10 +19,14 @@ pub struct ImplImports {
 
 impl ImplImports {
     pub fn new(mut imports: Imports) -> Self {
-        let ident_wxhandler = imports.add_workex_type_import("WxBusRecvHandler");
-        let ident_wxsender = imports.add_workex_type_import("WxProtocolBoundSender");
+        let (_, ident_wxhandler) = imports.add_workex_type_import("WxBusRecvHandler");
+        let (_, ident_wxsender) = imports.add_workex_type_import("WxProtocolBoundSender");
         imports.adjust_relative_to_from_parent();
-        Self { inner: imports, ident_wxhandler, ident_wxsender }
+        Self {
+            inner: imports,
+            ident_wxhandler,
+            ident_wxsender,
+        }
     }
 }
 
@@ -39,9 +43,12 @@ pub struct BusImports {
 
 impl BusImports {
     pub fn new(mut imports: Imports) -> Self {
-        let ident_wxconfig = imports.add_workex_type_import("WxProtocolBindConfig");
+        let (_, ident_wxconfig) = imports.add_workex_type_import("WxProtocolBindConfig");
         imports.adjust_relative_to_from_parent();
-        Self { inner: imports, ident_wxconfig }
+        Self {
+            inner: imports,
+            ident_wxconfig,
+        }
     }
 }
 
@@ -52,28 +59,35 @@ pub struct Imports {
     statements: Vec<Import>,
     /// Identifier for `WxPromise`
     pub ident_wxpromise: String,
+    /// Check if WxPromise exists in the original imports
+    pub was_wxpromise_imported: bool,
 }
 
 impl Imports {
     pub fn new(statements: Vec<Import>) -> Self {
         let mut imports = Self {
             statements,
+            was_wxpromise_imported: false,
             ident_wxpromise: String::new(),
         };
         // make sure the WxPromise import is available
-        imports.ident_wxpromise = imports.add_workex_type_import("WxPromise");
+        let (added, ident) = imports.add_workex_type_import("WxPromise");
+        imports.ident_wxpromise = ident;
+        imports.was_wxpromise_imported = !added;
         imports
     }
 
     /// Add a workex type import to existing imports if it doesn't exist yet,
-    /// and return the type identifier to use in code
-    pub fn add_workex_type_import(&mut self, ident: &str) -> String {
+    /// and return the type identifier to use in code.
+    ///
+    /// The returned bool indicates if the new import was added instead of already exists
+    pub fn add_workex_type_import(&mut self, ident: &str) -> (bool, String) {
         match self.statements.iter_mut().find(|x| x.is_workex()) {
             Some(Import::Import { idents, .. }) => {
                 // if the import already exists, just return the ident
                 for x in idents.iter() {
                     if x.ident == ident {
-                        return x.active_ident().to_string();
+                        return (false, x.active_ident().to_string());
                     }
                 }
                 // add another ident
@@ -85,8 +99,8 @@ impl Imports {
                     ident: ident.to_string(),
                     rename: None,
                 });
-                return ident.to_string();
-            },
+                (true, ident.to_string())
+            }
             _ => {
                 // if no import statement matches, add a new statement
                 self.statements.push(Import::Import {
@@ -98,7 +112,7 @@ impl Imports {
                     }],
                     from: WORKEX_IMPORT.to_string(),
                 });
-                return ident.to_string();
+                (true, ident.to_string())
             }
         }
     }
@@ -122,6 +136,10 @@ impl Imports {
                 }
             }
         }
+    }
+
+    pub fn to_code(&self) -> Code {
+        cconcat!(self.statements.iter().map(|x| x.to_code())).into()
     }
 }
 
@@ -150,18 +168,19 @@ impl Import {
         }
     }
     /// Emit code for this import
-    pub fn to_code(&self, path_prefix: Option<&str>) -> Code {
+    pub fn to_code(&self) -> Code {
         match self {
             Self::Opaque(s) => s.to_string().into(),
-            Self::Import { is_type, idents, from } => {
-                cblock! {
-                    if *is_type { "import type {" } else { "import {" },
-                    [
-                    clist!("," => idents.iter().map(|x| x.to_repr())).inlined()
-                ],
-                    format!("}} from \"{}{}\";", path_prefix.unwrap_or_default(), from)
-                }.into()
+            Self::Import {
+                is_type,
+                idents,
+                from,
+            } => cblock! {
+                if *is_type { "import type {" } else { "import {" }, [
+                clist!("," => idents.iter().map(|x| x.to_repr())).inlined()
+            ], format!("}} from \"{}\";", from)
             }
+            .into(),
         }
     }
 }
@@ -178,30 +197,6 @@ pub struct ImportIdent {
 }
 
 impl ImportIdent {
-    pub fn workex_client() -> Self {
-        Self {
-            is_type: false,
-            ident: "WorkexClient".to_string(),
-            rename: None,
-        }
-    }
-
-    pub fn workex_client_options() -> Self {
-        Self {
-            is_type: true,
-            ident: "WorkexClientOptions".to_string(),
-            rename: None,
-        }
-    }
-
-    pub fn workex_promise() -> Self {
-        Self {
-            is_type: true,
-            ident: "WorkexPromise".to_string(),
-            rename: None,
-        }
-    }
-
     pub fn to_repr(&self) -> String {
         let name_part = if let Some(rename) = &self.rename {
             format!("{} as {rename}", self.ident)
@@ -218,20 +213,5 @@ impl ImportIdent {
     /// Get the identifier to use in code
     pub fn active_ident(&self) -> &str {
         self.rename.as_deref().unwrap_or(&self.ident)
-    }
-}
-
-
-
-
-/// Resolve a relative import path <prefix>/<path>
-///
-/// If <path> is relative (starts with ./ or ../), it will be appended to <prefix>,
-/// otherwise, it will be kept as is
-pub fn resolve_relative_import(prefix: &str, path: &str) -> String {
-    if path.starts_with("./") || path.starts_with("../") {
-        format!("{}/{}", prefix, path)
-    } else {
-        path.to_string()
     }
 }

@@ -19,4 +19,3 @@ dunce = "1.0.5"
 swc_common = { version = "8.0.0", features = ["tty-emitter"] }
 swc_core = { version = "16.7.0", features = ["ecma_ast"] }
 swc_ecma_parser = "10.0.1"
-thiserror = "2.0.12"
