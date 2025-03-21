@@ -1,13 +1,18 @@
-import { WxResult, WxVoid} from "./WxError.ts";
-import { wxMakeMessageController, WxMessage, WxPayload } from "./WxMessage.ts";
 import { once } from "@pistonite/pure/sync";
 
-/** 
+import type { WxResult, WxVoid } from "./WxError.ts";
+import {
+    wxMakeMessageController,
+    type WxMessage,
+    type WxPayload,
+} from "./WxMessage.ts";
+
+/**
  * Messaging primitive representing one end of an established messaging channel
- * 
+ *
  * This is an abstraction of the underlying messaging channel, be it
  * a `Worker`, `Window`, or possibly `WebSocket` or HTTP requests in the future.
- * 
+ *
  * Workex provides factory functions for creating `WxEnd`s for different messaging channels.
  * Note that since `WxEnd` is an abstraction over an *established* channel, the design pattern
  * is that any valid `WxEnd` objects you create with functions in this library will
@@ -18,13 +23,13 @@ export type WxEnd = {
     send: (message: WxMessage) => WxVoid;
     /** Close this end. This may or may not notify the other end about the closing */
     close: () => void;
-    /** 
+    /**
      * Add a subscriber to be called when close() is called, before the end is actually closed
      *
      * Returns a function that can be called to remove the subscriber
      */
     onClose: (callback: () => void) => () => void;
-}
+};
 
 export type WxEndRecvFn = (message: WxPayload) => void | Promise<void>;
 
@@ -33,36 +38,42 @@ export type WxEndOptions = {
      * If specified and non-zero, the creation will fail if the connection
      * is not established within the number of seconds (for example, the worker
      * does not initialize the workex library correctly or an exception happens)
-     * 
+     *
      * Default is 60 seconds
      */
     timeout?: number;
-}
+};
 
 /**
  * Things that looks like a `Worker`
  */
 export type WorkerLike = {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     postMessage: (message: any) => any;
-    addEventListener: (type: string, listener: (event: any) => any, options?: {signal?: unknown}) => any;
+    addEventListener: (
+        type: string,
+        listener: (event: any) => any,
+        options?: { signal?: unknown },
+    ) => any;
     terminate?: (() => void) | null;
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 };
 
 /**
  * Create a {@link WxEnd} for messaging to a `Worker` or `WorkerGlobalScope`.
- * 
+ *
  * Note that even `Window` objects satisfy the `WorkerLike` interface,
  * they should not be used with this function because messaging between
  * `Window`s and `Worker`s are different.
- * 
+ *
  * Please see TODO for more details
- * 
+ *
  * @param onRecv callback to register when receiving a message from the other end
  */
-export const wxCreateWorkerEnd = async (
+export const wxMakeWorkerEnd = async (
     worker: WorkerLike,
     onRecv: WxEndRecvFn,
-    options?: WxEndOptions
+    options?: WxEndOptions,
 ): Promise<WxResult<WxEnd>> => {
     const controller = wxMakeMessageController(
         false,
@@ -73,7 +84,7 @@ export const wxCreateWorkerEnd = async (
         },
         (message: WxMessage) => {
             worker.postMessage(message);
-        }
+        },
     );
     if (controller.err) {
         return controller;
@@ -89,28 +100,34 @@ export const wxCreateWorkerEnd = async (
             closeController();
             worker.terminate?.();
         },
-        isClosed
+        isClosed,
     );
 
     return { val: end };
-}
+};
 
 /**
  * Create an `WxEnd` bound to the global `WorkerGlobalScope`.
- * 
+ *
  * Calling this when `globalThis` is not a `WorkerGlobalScope` will result in an error.
  * Calling this function multiple times will return the same promise - even if previous
  * call returned an error.
- * 
- * @param onRecv callback to register when receiving a message from the side that created this worker
  */
-export const wxWorkerGlobalEnd = once({
-    fn: async (onRecv: WxEndRecvFn, option?: WxEndOptions): Promise<WxResult<WxEnd>> => {
-        if (!("WorkerGlobalScope" in globalThis) || !(globalThis instanceof (globalThis as any).WorkerGlobalScope)) {
+export const wxMakeWorkerGlobalEnd = once({
+    fn: async (
+        onRecv: WxEndRecvFn,
+        option?: WxEndOptions,
+    ): Promise<WxResult<WxEnd>> => {
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        if (
+            !("WorkerGlobalScope" in globalThis) ||
+            !(globalThis instanceof (globalThis as any).WorkerGlobalScope)
+        ) {
             return {
-                err: { code: "NotWorkerGlobalScope" }
+                err: { code: "NotWorkerGlobalScope" },
             };
         }
+        /* eslint-enable @typescript-eslint/no-explicit-any */
 
         const controller = wxMakeMessageController(
             true,
@@ -119,11 +136,15 @@ export const wxWorkerGlobalEnd = once({
             (handler, signal) => {
                 // worker global scope can only communicate with the thread
                 // that created the worker, so we don't need extra handling
-                (globalThis as unknown as WorkerLike).addEventListener("message", handler, { signal });
+                (globalThis as unknown as WorkerLike).addEventListener(
+                    "message",
+                    handler,
+                    { signal },
+                );
             },
             (message: WxMessage) => {
                 (globalThis as unknown as WorkerLike).postMessage(message);
-            }
+            },
         );
         if (controller.err) {
             return controller;
@@ -140,8 +161,8 @@ export const wxWorkerGlobalEnd = once({
             isClosed,
         );
         return { val: end };
-    }
-})
+    },
+});
 
 /**
  * Create a channel with 2 ends that can communicate with each other in the same context.
@@ -149,7 +170,10 @@ export const wxWorkerGlobalEnd = once({
  * Calling `close` on either end will close the channel immediately (any message sent but not received
  * will also not be received).
  */
-export const wxChannel = (onRecvA: WxEndRecvFn, onRecvB: WxEndRecvFn): [WxEnd, WxEnd] => {
+export const wxMakeChannel = (
+    onRecvA: WxEndRecvFn,
+    onRecvB: WxEndRecvFn,
+): [WxEnd, WxEnd] => {
     let isClosed = false;
     const sendFromA = (message: WxMessage) => {
         if (isClosed) {
@@ -159,7 +183,7 @@ export const wxChannel = (onRecvA: WxEndRecvFn, onRecvB: WxEndRecvFn): [WxEnd, W
             if (isClosed) {
                 return;
             }
-            onRecvB(message)
+            onRecvB(message);
         }, 0);
         return {};
     };
@@ -171,24 +195,24 @@ export const wxChannel = (onRecvA: WxEndRecvFn, onRecvB: WxEndRecvFn): [WxEnd, W
             if (isClosed) {
                 return;
             }
-            onRecvA(message)
+            onRecvA(message);
         }, 0);
         return {};
     };
     const subscribers: (() => void)[] = [];
-        const onClose =  (callback: () => void) => {
-            subscribers.push(callback);
-            return () => {
-                const index = subscribers.indexOf(callback);
-                if (index !== -1) {
-                    subscribers.splice(index, 1);
-                }
+    const onClose = (callback: () => void) => {
+        subscribers.push(callback);
+        return () => {
+            const index = subscribers.indexOf(callback);
+            if (index !== -1) {
+                subscribers.splice(index, 1);
             }
         };
+    };
     const notifyClose = () => {
-            for (const subscriber of subscribers) {
-                subscriber();
-            }
+        for (const subscriber of subscribers) {
+            subscriber();
+        }
     };
     const close = () => {
         notifyClose();
@@ -196,29 +220,29 @@ export const wxChannel = (onRecvA: WxEndRecvFn, onRecvB: WxEndRecvFn): [WxEnd, W
     };
     return [
         { send: sendFromA, close, onClose },
-        { send: sendFromB, close, onClose }
+        { send: sendFromB, close, onClose },
     ];
-}
+};
 
 export const wxMakeEnd = (
     send: (message: WxMessage) => void,
     close: () => void,
-    isClosed: () => boolean
+    isClosed: () => boolean,
 ): WxEnd => {
     const subscribers: (() => void)[] = [];
-        const onClose =  (callback: () => void) => {
-            subscribers.push(callback);
-            return () => {
-                const index = subscribers.indexOf(callback);
-                if (index !== -1) {
-                    subscribers.splice(index, 1);
-                }
+    const onClose = (callback: () => void) => {
+        subscribers.push(callback);
+        return () => {
+            const index = subscribers.indexOf(callback);
+            if (index !== -1) {
+                subscribers.splice(index, 1);
             }
         };
+    };
     const notifyClose = () => {
-            for (const subscriber of subscribers) {
-                subscriber();
-            }
+        for (const subscriber of subscribers) {
+            subscriber();
+        }
     };
     return {
         send: (message) => {
@@ -231,7 +255,7 @@ export const wxMakeEnd = (
         close: () => {
             notifyClose();
             close();
-        }
-        , onClose
-    }
-}
+        },
+        onClose,
+    };
+};

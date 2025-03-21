@@ -1,74 +1,109 @@
 import { once } from "@pistonite/pure/sync";
 import { errstr } from "@pistonite/pure/result";
 
-import { wxChannel, WxEnd, WxEndOptions, WxEndRecvFn, wxMakeEnd } from "./WxEnd.ts"
-import { wxFail, WxResult } from "./WxError.ts"
-import { wxMakeMessageController, wxFuncClose, wxInternalProtocol, WxMessage } from "./WxMessage.ts";
+import {
+    wxMakeChannel,
+    type WxEnd,
+    type WxEndOptions,
+    type WxEndRecvFn,
+    wxMakeEnd,
+} from "./WxEnd.ts";
+import { wxFail, type WxResult } from "./WxError.ts";
+import {
+    wxMakeMessageController,
+    wxFuncClose,
+    wxInternalProtocol,
+    type WxMessage,
+} from "./WxMessage.ts";
 
 /**
  * Things that looks like a `Window`
  */
 export type WindowLike = {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     postMessage: (message: any, targetOrigin: string) => any;
-    addEventListener: (type: string, listener: (event: any) => any, options?: {signal?: unknown}) => any;
+    addEventListener: (
+        type: string,
+        listener: (event: any) => any,
+        options?: { signal?: unknown },
+    ) => any;
     opener?: WindowLike | null;
     parent?: WindowLike | null;
     location?: {
         origin?: string;
-    },
+    };
     open: (url: string, target: string, features: string) => WindowLike | null;
     close?: () => void;
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 };
 
 export type IFrameLike = {
-    src: string,
-    contentWindow: WindowLike
-}
+    src: string;
+    contentWindow: WindowLike;
+};
 
 const wxSameContextGlobalEndCreator = "__workex_scgec";
 
 /**
  * Controller for the global `Window` object
  * for talking to other `Window`s
- * 
+ *
  */
 export type WxWindow = {
     /**
      * Create a {@link WxEnd} for messaging to the owner of the window.
      * For window opened with `window.open`, this is the window that opened the window (i.e. the `window.opener` object).
      * For iframes, this is the window that contains the iframe (i.e. the `window.parent` object).
-     * 
+     *
      * Note that if this window and the owner are same-origin, the browser may put them in the same context,
      * in which case messaging is done by directly calling the handler, since they are in the same context.
      */
-    owner(ownerOrigin: string, onRecv: WxEndRecvFn, options?: WxEndOptions): Promise<WxResult<WxEnd>>;
+    owner(
+        ownerOrigin: string,
+        onRecv: WxEndRecvFn,
+        options?: WxEndOptions,
+    ): Promise<WxResult<WxEnd>>;
 
     /**
      * Open a Popup window and create a {@link WxEnd} for messaging to that window
      */
-    popup(url: string, onRecv: WxEndRecvFn, options?: WxWindowOpenOptions): Promise<WxResult<WxEnd>>;
+    popup(
+        url: string,
+        onRecv: WxEndRecvFn,
+        options?: WxWindowOpenOptions,
+    ): Promise<WxResult<WxEnd>>;
 
     /**
      * Create a {@link WxEnd} for messaging to an iframe
      */
-    frame(iframe: IFrameLike, onRecv: WxEndRecvFn, options?: WxFrameLinkOptions): Promise<WxResult<WxEnd>>;
-}
+    frame(
+        iframe: IFrameLike,
+        onRecv: WxEndRecvFn,
+        options?: WxFrameLinkOptions,
+    ): Promise<WxResult<WxEnd>>;
+};
 
+/**
+ * Options for opening a window. See {@link wxPopup}
+ */
 export type WxWindowOpenOptions = WxEndOptions & {
     width?: number;
     height?: number;
-    /** 
+    /**
      * Decides what to do when close() is called from the popup.
-     * 
+     *
      * This callback will be registered to the pagehide event of the popup window
      */
     onClose?: () => void;
-}
+};
 
+/**
+ * Options for linking to an iframe. See {@link wxFrame}
+ */
 export type WxFrameLinkOptions = WxEndOptions & {
     /** Decides what to do when close() is called from within the frame */
     onClose?: () => void;
-}
+};
 
 let wxWindowGlobal: WxWindow | undefined = undefined;
 
@@ -79,13 +114,18 @@ export const wxWindow = (): WxResult<WxWindow> => {
     if (wxWindowGlobal !== undefined) {
         return { val: wxWindowGlobal };
     }
-    if (!("Window" in globalThis) || !(globalThis instanceof (globalThis as any).Window)) {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    if (
+        !("Window" in globalThis) ||
+        !(globalThis instanceof (globalThis as any).Window)
+    ) {
         return {
             err: {
-                code: "NotWindow"
-            }
-        }
+                code: "NotWindow",
+            },
+        };
     }
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     // prepare owner for linking
     let owner: WxWindow["owner"];
@@ -95,9 +135,9 @@ export const wxWindow = (): WxResult<WxWindow> => {
     if (!selfOrigin) {
         return {
             err: {
-                code: "NoOriginForWindow"
-            }
-        }
+                code: "NoOriginForWindow",
+            },
+        };
     }
     if (parent) {
         owner = createOwnerFnFor(parent, selfOrigin);
@@ -107,16 +147,22 @@ export const wxWindow = (): WxResult<WxWindow> => {
         owner = () => Promise.resolve({ err: { code: "NoOwnerForWindow" } });
     }
 
-    const popup = async (url: string, onRecv: WxEndRecvFn, options?: WxWindowOpenOptions): Promise<WxResult<WxEnd>> => {
+    const popup = async (
+        url: string,
+        onRecv: WxEndRecvFn,
+        options?: WxWindowOpenOptions,
+    ): Promise<WxResult<WxEnd>> => {
         let targetOrigin: string;
         try {
             targetOrigin = new URL(url).origin;
         } catch (e) {
             console.error(e);
-            return { err: {
-                code: "InvalidUrl",
-                message: "Failed to parse URL: " + errstr(e)
-            } };
+            return {
+                err: {
+                    code: "InvalidUrl",
+                    message: "Failed to parse URL: " + errstr(e),
+                },
+            };
         }
 
         let features = "popup";
@@ -128,7 +174,11 @@ export const wxWindow = (): WxResult<WxWindow> => {
         }
         let targetWindow: WindowLike | null = null;
         try {
-            targetWindow = (globalThis as unknown as WindowLike).open(url, "_blank", features);
+            targetWindow = (globalThis as unknown as WindowLike).open(
+                url,
+                "_blank",
+                features,
+            );
         } catch (e) {
             console.error(e);
             targetWindow = null;
@@ -144,47 +194,83 @@ export const wxWindow = (): WxResult<WxWindow> => {
 
         const close = () => {
             targetWindow?.close?.();
-        }
+        };
 
-        return await linkToTargetWindow(selfOrigin, targetWindow, targetOrigin, onRecv, close, options);
+        return await linkToTargetWindow(
+            selfOrigin,
+            targetWindow,
+            targetOrigin,
+            onRecv,
+            close,
+            options,
+        );
     };
 
-    const frame = async (iframe: IFrameLike, onRecv: WxEndRecvFn, options?: WxFrameLinkOptions): Promise<WxResult<WxEnd>> => {
+    const frame = async (
+        iframe: IFrameLike,
+        onRecv: WxEndRecvFn,
+        options?: WxFrameLinkOptions,
+    ): Promise<WxResult<WxEnd>> => {
         let targetOrigin: string;
         try {
             targetOrigin = new URL(iframe.src).origin;
         } catch (e) {
             console.error(e);
-            return { err: {
-                code: "InvalidUrl",
-                message: "Failed to parse URL: " + errstr(e)
-            } };
+            return {
+                err: {
+                    code: "InvalidUrl",
+                    message: "Failed to parse URL: " + errstr(e),
+                },
+            };
         }
 
         const onClose = options?.onClose;
-        return await linkToTargetWindow(selfOrigin, iframe.contentWindow, targetOrigin, onRecv, onClose ?? (() => {}), options);
-    }
+        return await linkToTargetWindow(
+            selfOrigin,
+            iframe.contentWindow,
+            targetOrigin,
+            onRecv,
+            onClose ?? (() => {}),
+            options,
+        );
+    };
 
     wxWindowGlobal = {
         owner,
         popup,
-        frame
+        frame,
     };
 
     return { val: wxWindowGlobal };
-}
+};
 
-const createOwnerFnFor = (ownerWindow: WindowLike, origin: string): WxWindow["owner"] => {
+const createOwnerFnFor = (
+    ownerWindow: WindowLike,
+    origin: string,
+): WxWindow["owner"] => {
     return once({
-        fn: async (ownerOrigin: string, onRecv: WxEndRecvFn, options?: WxEndOptions): Promise<WxResult<WxEnd>> => {
+        fn: async (
+            ownerOrigin: string,
+            onRecv: WxEndRecvFn,
+            options?: WxEndOptions,
+        ): Promise<WxResult<WxEnd>> => {
             // same origin, get the global end creator from the owner
             if (origin === ownerOrigin) {
                 if (wxSameContextGlobalEndCreator in globalThis) {
-                    const globalEndCreator = (globalThis as any)[wxSameContextGlobalEndCreator];
-                    (globalThis as any)[wxSameContextGlobalEndCreator] = undefined;
-                    if (globalEndCreator && typeof globalEndCreator === "function") {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const globalEndCreator = (globalThis as any)[
+                        wxSameContextGlobalEndCreator
+                    ];
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (globalThis as any)[wxSameContextGlobalEndCreator] =
+                        undefined;
+                    if (
+                        globalEndCreator &&
+                        typeof globalEndCreator === "function"
+                    ) {
                         try {
-                            const end: WxResult<WxEnd> = await globalEndCreator(onRecv);
+                            const end: WxResult<WxEnd> =
+                                await globalEndCreator(onRecv);
                             if ("val" in end || "err" in end) {
                                 return end;
                             }
@@ -193,10 +279,12 @@ const createOwnerFnFor = (ownerWindow: WindowLike, origin: string): WxWindow["ow
                         }
                     }
                 }
-                console.warn("[workex] same-origin same-context linking failed, falling back to postMessage");
+                console.warn(
+                    "[workex] same-origin same-context linking failed, falling back to postMessage",
+                );
                 return {
-                    err: wxFail("Same-origin same-context linking failed")
-                }
+                    err: wxFail("Same-origin same-context linking failed"),
+                };
             }
 
             // cross-origin
@@ -207,15 +295,24 @@ const createOwnerFnFor = (ownerWindow: WindowLike, origin: string): WxWindow["ow
                 (handler, signal) => {
                     // messages from the target window will be posted to globalThis (shared
                     // with all windows), so we must route it according to event.source
-                    (globalThis as unknown as WindowLike).addEventListener("message", (event: unknown) => {
-                        if (event && (event as any).source === ownerWindow) {
-                            handler(event);
-                        }
-                    }, { signal });
+                    (globalThis as unknown as WindowLike).addEventListener(
+                        "message",
+                        (event: unknown) => {
+                            /* eslint-disable @typescript-eslint/no-explicit-any */
+                            if (
+                                event &&
+                                (event as any).source === ownerWindow
+                            ) {
+                                handler(event);
+                            }
+                            /* eslint-enable @typescript-eslint/no-explicit-any */
+                        },
+                        { signal },
+                    );
                 },
                 (message: WxMessage) => {
                     ownerWindow.postMessage(message, ownerOrigin);
-                }
+                },
             );
             if (controller.err) {
                 return controller;
@@ -228,29 +325,32 @@ const createOwnerFnFor = (ownerWindow: WindowLike, origin: string): WxWindow["ow
                 (message) => ownerWindow.postMessage(message, ownerOrigin),
                 () => {
                     // try let the other side close us
-                    ownerWindow.postMessage({
-                        s: wxInternalProtocol,
-                        p: wxInternalProtocol,
-                        m: 1,
-                        f: wxFuncClose,
-                        d: "close"
-                    }, ownerOrigin);
+                    ownerWindow.postMessage(
+                        {
+                            s: wxInternalProtocol,
+                            p: wxInternalProtocol,
+                            m: 1,
+                            f: wxFuncClose,
+                            d: "close",
+                        },
+                        ownerOrigin,
+                    );
                 },
-                isClosed
+                isClosed,
             );
             return { val: end };
-        }
+        },
     });
-}
+};
 
 /** Helper to link to a Window object */
 const linkToTargetWindow = (
     selfOrigin: string,
-    targetWindow: WindowLike, 
-    targetOrigin: string, 
-    onRecv: WxEndRecvFn, 
+    targetWindow: WindowLike,
+    targetOrigin: string,
+    onRecv: WxEndRecvFn,
     close: () => void,
-    options?: WxEndOptions
+    options?: WxEndOptions,
 ): Promise<WxResult<WxEnd>> => {
     // setting the global end creator for same-origin same-context linking
     // this should be fine (no race condition) because if this is doable,
@@ -258,35 +358,46 @@ const linkToTargetWindow = (
     if (targetOrigin === selfOrigin) {
         return new Promise<WxResult<WxEnd>>((resolve) => {
             try {
-                (targetWindow as any)[wxSameContextGlobalEndCreator] = (onRecvB: WxEndRecvFn) => {
-                    const [endA, endB] = wxChannel(onRecv, onRecvB);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (targetWindow as any)[wxSameContextGlobalEndCreator] = (
+                    onRecvB: WxEndRecvFn,
+                ) => {
+                    const [endA, endB] = wxMakeChannel(onRecv, onRecvB);
                     const originalClose = endA.close;
                     endA.close = () => {
                         originalClose();
                         close();
-                    }
+                    };
                     resolve({ val: endA });
                     return { val: endB };
-                }
+                };
                 return;
             } catch (e) {
                 console.error(e);
                 resolve({
-                    err: wxFail("Failed to create same-context linking: " + errstr(e))
+                    err: wxFail(
+                        "Failed to create same-context linking: " + errstr(e),
+                    ),
                 });
             }
         });
     }
 
-    return linkToTargetWindowCrossOrigin(targetWindow, targetOrigin, onRecv, close, options);
-}
+    return linkToTargetWindowCrossOrigin(
+        targetWindow,
+        targetOrigin,
+        onRecv,
+        close,
+        options,
+    );
+};
 
 const linkToTargetWindowCrossOrigin = async (
-    targetWindow: WindowLike, 
-    targetOrigin: string, 
-    onRecv: WxEndRecvFn, 
+    targetWindow: WindowLike,
+    targetOrigin: string,
+    onRecv: WxEndRecvFn,
     closeWindow: () => void,
-    options?: WxEndOptions
+    options?: WxEndOptions,
 ): Promise<WxResult<WxEnd>> => {
     const controller = wxMakeMessageController(
         false,
@@ -295,15 +406,20 @@ const linkToTargetWindowCrossOrigin = async (
         (handler, signal) => {
             // messages from the target window will be posted to globalThis (shared
             // with all windows), so we must route it according to event.source
-            (globalThis as unknown as WindowLike).addEventListener("message", (event: unknown) => {
-                if (event && (event as any).source === targetWindow) {
-                    handler(event);
-                }
-            }, { signal });
+            (globalThis as unknown as WindowLike).addEventListener(
+                "message",
+                (event: unknown) => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    if (event && (event as any).source === targetWindow) {
+                        handler(event);
+                    }
+                },
+                { signal },
+            );
         },
         (message: WxMessage) => {
             targetWindow.postMessage(message, targetOrigin);
-        }
+        },
     );
 
     if (controller.err) {
@@ -318,8 +434,9 @@ const linkToTargetWindowCrossOrigin = async (
         () => {
             closeController();
             closeWindow();
-        },isClosed
+        },
+        isClosed,
     );
 
     return { val: end };
-}
+};

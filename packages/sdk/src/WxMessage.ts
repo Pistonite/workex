@@ -1,6 +1,7 @@
 import { errstr } from "@pistonite/pure/result";
-import { WxEnd, WxEndRecvFn } from "./WxEnd.ts";
-import { WxResult, WxVoid } from "./WxError.ts";
+
+import type { WxEndRecvFn } from "./WxEnd.ts";
+import type { WxResult, WxVoid } from "./WxError.ts";
 
 /**
  * Payload sendable to a {@link WxEnd}
@@ -10,45 +11,45 @@ export type WxPayload = {
      * The protocol identifier. Listeners on the other side
      * maybe use this identifier to choose if they should handle or ignore
      * the payload
-     * 
+     *
      * The protocol "workex" is reserved for internal communication
      */
-    p: string,
+    p: string;
 
-    /** 
+    /**
      * Message identifier.
-     * 
+     *
      * This is a serial number generated per RPC call to route the returned
      * response to the promise that is waiting for it.
-     * 
+     *
      * Messages 0-99 are reserved for internal use. Regular RPC calls
      * will start from 100. Note that the first few messages are used
      * to register the buses
      */
-    m: number,
+    m: number;
 
     /**
      * Function identifier.
-     * 
+     *
      * This is a unique identifier inside the protocol that identifies
      * the function that is being called by RPC. For response messages,
      * this indicates if the response is a return (0) or catch (1)
-     * 
+     *
      * Functions 0-31 are reserved for internal use in workex library
      */
-    f: number,
+    f: number;
 
     /**
      * Data payload.
-     * 
+     *
      * This is anything transferrable by the underlying messaging channel.
      * For example, for Workers, this is any transferreable object. For web requests,
      * this should probably be something seraializable to JSON.
      */
-    d: unknown
-}
+    d: unknown;
+};
 
-/** 
+/**
  * Internal protocol used for implementation of lower-level
  * communication before control is passed to user-defined interfaces
  */
@@ -68,9 +69,9 @@ export const wxFuncHandshake = 2 as const;
 /** Hello handshake message */
 export const wxHandshakeMsgHello = 1 as const;
 
-/** 
+/**
  * Func ID used to request closing the connection. Only active side can send this.
- * On the passive side, calling close() will destroy the active side and the 
+ * On the passive side, calling close() will destroy the active side and the
  * active side may not know about it
  *
  * This func ID is handled by {@link WxEnd}
@@ -92,17 +93,19 @@ export const wxFuncClose = 3 as const;
  */
 export const wxFuncProtocol = 4 as const;
 
-
 /**
  * Message object with the `s` field set to "workex" to not be confused with messages
  * with other libraries
  */
-export type WxMessage = WxPayload & {s: typeof wxInternalProtocol};
+export type WxMessage = WxPayload & { s: typeof wxInternalProtocol };
 
-export const isWxMessageEvent = (event: unknown): event is { data: WxPayload } => {
+export const isWxMessageEvent = (
+    event: unknown,
+): event is { data: WxPayload } => {
     if (!event) {
         return false;
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = (event as any).data;
     if (!data || data.s !== "workex") {
         return false;
@@ -112,34 +115,37 @@ export const isWxMessageEvent = (event: unknown): event is { data: WxPayload } =
         return false;
     }
 
-    return typeof data.m === "number" &&
-        typeof data.f === "number" &&
-        "d" in data;
-}
+    return (
+        typeof data.m === "number" && typeof data.f === "number" && "d" in data
+    );
+};
 
 /**
  * Controller for the lowest level of message passing using `MessageEvent`s.
  * This is used internally by {@link WxEnd}
  */
 export type WxMessageController = {
-    /** 
+    /**
      * Mark the end as closed and unregisters all message handlers
      * registered by the end. If handshake is still in progress, it will
      * be aborted.
      */
-    close: () => void,
+    close: () => void;
 
     /** Check if the end is closed */
-    isClosed: () => boolean,
+    isClosed: () => boolean;
 
     /**
      * Start the handshake process.
      */
-    start: () => Promise<WxVoid>
-}
+    start: () => Promise<WxVoid>;
+};
 
 /** Wrapper function for adding listener for `"message"` events */
-export type AddMessageEventListenerFn = (listener: (event: unknown) => void, signal: unknown) => void;
+export type AddMessageEventListenerFn = (
+    listener: (event: unknown) => void,
+    signal: unknown,
+) => void;
 
 /**
  * Create a {@link WxMessageController} that handles the lowest
@@ -167,7 +173,7 @@ export const wxMakeMessageController = (
     };
 
     try {
-        addMessageEventListener(((event: unknown) => {
+        addMessageEventListener((event: unknown) => {
             if (!isWxMessageEvent(event)) {
                 return;
             }
@@ -187,137 +193,153 @@ export const wxMakeMessageController = (
             }
             // route the message to the bus handler
             onRecv(event.data);
-        }), generalController.signal);
+        }, generalController.signal);
     } catch (e) {
         close();
         console.error(e);
         return {
             err: {
                 code: "AddEventListenerFail",
-                message: "Error calling addEventListener: " + errstr(e)
-            }
-        }
+                message: "Error calling addEventListener: " + errstr(e),
+            },
+        };
     }
 
-
-    const executeHandshake = () => new Promise<WxVoid>((resolve) => {
-        // initiator will fire hello messages on an interval until hello is received
-        // from the other end. The other end will respond with hello whenever
-        // it receives a hello message
-        if (isActiveSide) {
-            let done = false;
-            try {
-                addMessageEventListener((event: unknown) => {
-                    if (!isWxMessageEvent(event)) {
-                        return;
-                    }
-                    const { p, f, m } = event.data;
-                    if (p !== wxInternalProtocol) {
-                        return;
-                    }
-                    if (isClosed) {
-                        return;
-                    }
-                    if (f === wxFuncHandshake) {
-                        if (m === wxHandshakeMsgHello) {
-                            // got hello back from other side
-                            done = true;
-                            resolve({});
-                            handshakeController.abort();
+    const executeHandshake = () =>
+        new Promise<WxVoid>((resolve) => {
+            // initiator will fire hello messages on an interval until hello is received
+            // from the other end. The other end will respond with hello whenever
+            // it receives a hello message
+            if (isActiveSide) {
+                let done = false;
+                try {
+                    addMessageEventListener((event: unknown) => {
+                        if (!isWxMessageEvent(event)) {
                             return;
                         }
-                        console.warn(`[workex] unknown handshake message with mID ${m}`);
-                    }
-                }, handshakeController.signal);
-            } catch (e) {
-                console.error(e);
-                return {
-                    err: {
-                        code: "AddEventListenerFail",
-                        message: "Error calling addEventListener when initiating handshake: " + errstr(e)
-                    }
-                }
-            }
-            let count = 0;
-            const send = () => {
-                if (done) {
-                    return;
-                }
-                count++;
-                postMessage({ 
-                    s: wxInternalProtocol,
-                    p: wxInternalProtocol,
-                    m: wxHandshakeMsgHello,
-                    f: wxFuncHandshake,
-                    d: "hello"
-                });
-                if (count < 20) {
-                    setTimeout(send, 50);
-                    return;
-                }
-                setTimeout(send, 1000);
-            };
-            send();
-        } else {
-            try {
-                addMessageEventListener((event: unknown) => {
-                    if (!isWxMessageEvent(event)) {
-                        return;
-                    }
-                    const { p, f, m } = event.data;
-                    if ( p !== wxInternalProtocol) {
-                        return;
-                    }
-                    if (f === wxFuncHandshake) {
-                        if (m === wxHandshakeMsgHello) {
-                            // post hello back
-                            postMessage({
-                                s: wxInternalProtocol,
-                                p: wxInternalProtocol,
-                                m: wxHandshakeMsgHello,
-                                f: wxFuncHandshake,
-                                d: "hello"
-                            });
-                            resolve({});
-                            handshakeController.abort();
+                        const { p, f, m } = event.data;
+                        if (p !== wxInternalProtocol) {
                             return;
                         }
-                        console.warn(`[workex] unknown handshake message with mID ${m}`);
+                        if (isClosed) {
+                            return;
+                        }
+                        if (f === wxFuncHandshake) {
+                            if (m === wxHandshakeMsgHello) {
+                                // got hello back from other side
+                                done = true;
+                                resolve({});
+                                handshakeController.abort();
+                                return;
+                            }
+                            console.warn(
+                                `[workex] unknown handshake message with mID ${m}`,
+                            );
+                        }
+                    }, handshakeController.signal);
+                } catch (e) {
+                    console.error(e);
+                    return {
+                        err: {
+                            code: "AddEventListenerFail",
+                            message:
+                                "Error calling addEventListener when initiating handshake: " +
+                                errstr(e),
+                        },
+                    };
+                }
+                let count = 0;
+                const send = () => {
+                    if (done) {
+                        return;
                     }
-                }, handshakeController.signal);
-            } catch (e) {
-                console.error(e);
-                return {
-                    err: {
-                        code: "AddEventListenerFail",
-                        message: "Error calling addEventListener when waiting for handshake: " + errstr(e)
+                    count++;
+                    postMessage({
+                        s: wxInternalProtocol,
+                        p: wxInternalProtocol,
+                        m: wxHandshakeMsgHello,
+                        f: wxFuncHandshake,
+                        d: "hello",
+                    });
+                    if (count < 20) {
+                        setTimeout(send, 50);
+                        return;
                     }
+                    setTimeout(send, 1000);
+                };
+                send();
+            } else {
+                try {
+                    addMessageEventListener((event: unknown) => {
+                        if (!isWxMessageEvent(event)) {
+                            return;
+                        }
+                        const { p, f, m } = event.data;
+                        if (p !== wxInternalProtocol) {
+                            return;
+                        }
+                        if (f === wxFuncHandshake) {
+                            if (m === wxHandshakeMsgHello) {
+                                // post hello back
+                                postMessage({
+                                    s: wxInternalProtocol,
+                                    p: wxInternalProtocol,
+                                    m: wxHandshakeMsgHello,
+                                    f: wxFuncHandshake,
+                                    d: "hello",
+                                });
+                                resolve({});
+                                handshakeController.abort();
+                                return;
+                            }
+                            console.warn(
+                                `[workex] unknown handshake message with mID ${m}`,
+                            );
+                        }
+                    }, handshakeController.signal);
+                } catch (e) {
+                    console.error(e);
+                    return {
+                        err: {
+                            code: "AddEventListenerFail",
+                            message:
+                                "Error calling addEventListener when waiting for handshake: " +
+                                errstr(e),
+                        },
+                    };
                 }
             }
-        }
-    });
+        });
 
     const start = async () => {
         const handshakePromise = executeHandshake();
         const notice1 = setTimeout(() => {
-            console.warn("[workex] connection has not been established after 1 second!");
+            console.warn(
+                "[workex] connection has not been established after 1 second!",
+            );
         }, 1000);
         const notice2 = setTimeout(() => {
-            console.warn("[workex] connection has not been established after 5 seconds!");
+            console.warn(
+                "[workex] connection has not been established after 5 seconds!",
+            );
         }, 5000);
         const notice3 = setTimeout(() => {
-            console.warn("[workex] connection has not been established after 10 seconds! (this is the last warning)");
+            console.warn(
+                "[workex] connection has not been established after 10 seconds! (this is the last warning)",
+            );
         }, 10000);
         const result = await Promise.race([
             handshakePromise,
             new Promise<WxVoid>((resolve) => {
                 setTimeout(() => {
                     close();
-                    resolve({ err: {
-                        code: "Timeout",
-                    } });
+                    resolve({
+                        err: {
+                            code: "Timeout",
+                        },
+                    });
                 }, timeout);
-            })
+            }),
         ]);
         clearTimeout(notice1);
         clearTimeout(notice2);
@@ -329,5 +351,4 @@ export const wxMakeMessageController = (
     };
 
     return { val: { start, close, isClosed: () => isClosed } };
-
-}
+};

@@ -1,9 +1,9 @@
 import type { Err, Ok, Result, Void, VoidOk } from "@pistonite/pure/result";
 
 /** Workex Error Codes */
-export type Wec = 
+export type WxEc =
     /** Generic Failure */
-    "Fail"
+    | "Fail"
     /** Failed to add event listener*/
     | "AddEventListenerFail"
     /** Timeout while waiting for response */
@@ -35,25 +35,27 @@ export type Wec =
     /** The handler did not return anything */
     | "NoReturn"
     /** The stub handler in a one-direction protocol is being called unexpectedly */
-    | "UnexpectedStubCall"
-    
-    ;
+    | "UnexpectedStubCall";
 
 /** Workex Error object, containing an error code and optionally a message */
 export type WxError = {
-    code: Wec,
-    message?: string
-}
+    code: WxEc;
+    message?: string;
+};
 
 export const wxFail = (message: string): WxError => ({
     code: "Fail",
-    message
+    message,
 });
 
 export type WxResult<T> = Result<T, WxError>;
 export type WxVoid = Void<WxError>;
 
-/** Promise type wrapper, mainly to make it easier for codegen to produce types */
+/**
+ * Promise type wrapper.
+ *
+ * This is equivalent to `Promise<WxVoid>` when `T` is `void`, and `Promise<WxResult<T>>` otherwise.
+ */
 export type WxPromise<T> = Promise<
     // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     (T extends void ? VoidOk : Ok<T>) | Err<WxError>
