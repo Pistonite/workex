@@ -1,5 +1,0 @@
-/node_modules
-.eslintcache
-.prettierignore
-/eslint.config.js
-/tsconfig*.json

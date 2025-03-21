@@ -50,10 +50,10 @@ importers:
       '@pistonite/workex':
         specifier: workspace:*
         version: link:../sdk
+    devDependencies:
       serve:
         specifier: ^14.2.4
         version: 14.2.4
-    devDependencies:
       typescript:
         specifier: ^5.7.2
         version: 5.7.3
@@ -155,28 +155,6 @@ importers:
       '@pistonite/pure':
         specifier: ^0.23.1
         version: 0.23.1
-    devDependencies:
-      mono-dev:
-        specifier: workspace:*
-        version: link:../mono-dev
-
-  packages/test:
-    devDependencies:
-      '@pistonite/pure':
-        specifier: ^0.0.18
-        version: 0.0.18
-      '@pistonite/workex':
-        specifier: workspace:*
-        version: link:../sdk
-      mono-dev:
-        specifier: workspace:*
-        version: link:../mono-dev
-
-  packages/ts-sdk:
-    dependencies:
-      '@pistonite/pure':
-        specifier: ^0.0.18
-        version: 0.0.18
     devDependencies:
       mono-dev:
         specifier: workspace:*
