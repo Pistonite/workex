@@ -9,13 +9,13 @@ includes:
     taskfile: ./packages/cli
     dir: ./packages/cli
 
-  test:
-    taskfile: ./packages/test
-    dir: ./packages/test
+  ex-tutorial:
+    taskfile: ./packages/example-tutorial
+    dir: ./packages/example-tutorial
 
-  ts-sdk:
-    taskfile: ./packages/ts-sdk
-    dir: ./packages/ts-sdk
+  sdk:
+    taskfile: ./packages/sdk
+    dir: ./packages/sdk
 
   doc:
     taskfile: ./packages/doc
@@ -41,16 +41,16 @@ tasks:
   post-install:
     cmds:
       - task: doc:install
-      - task: ts-sdk:install
+      - task: sdk:install
       
   check:
     cmds:
       - task: cli:check
-      - task: ts-sdk:check
+      - task: sdk:check
 
   test:
     cmds:
-      - task: test:run
+      - task: example-tutorial:run
 
   typedoc:
     cmds:
