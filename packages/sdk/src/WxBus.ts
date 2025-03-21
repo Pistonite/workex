@@ -134,10 +134,12 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
                         p: wxInternalProtocol,
                         m: shallowEqual(protocolQuery, receivedQuery) ? 1 : 2, // agree or disagree
                         f: wxFuncProtocol,
-                        d: protocols,
+                        d: protocolQuery,
                     });
                     if (res.err) {
                         resolveProtocol({ err: res.err });
+                    } else {
+                        resolveProtocol({});
                     }
                 } else if (m === 1) {
                     // agree

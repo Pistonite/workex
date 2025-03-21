@@ -50,6 +50,9 @@ importers:
       '@pistonite/workex':
         specifier: workspace:*
         version: link:../sdk
+      serve:
+        specifier: ^14.2.4
+        version: 14.2.4
     devDependencies:
       typescript:
         specifier: ^5.7.2

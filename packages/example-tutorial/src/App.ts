@@ -9,6 +9,7 @@ import type { AppSide } from "./Interfaces.ts";
 // to avoid issues with top-level await in older browsers
 // and be able to use early returns
 const main = async () => {
+    console.log("App: start");
     // define the handler on app side that responds
     // to calls from the worker
     const handler: AppSide = {
@@ -20,11 +21,13 @@ const main = async () => {
         })
     }
 
+    console.log("App: creating worker");
     // create the worker
     // here we assume the bundled worker JS file will be served
     // as /worker.js
     const worker = new Worker("/worker.js");
 
+    console.log("App: connectiong to worker");
     // because WorkerSide and AppSide are linked,
     // testappWorkerSide takes in an AppSide handler
     // and returns a WorkerSide interface
@@ -34,13 +37,16 @@ const main = async () => {
 
     // handle error in initialization of the connection
     if (result.err) {
-        console.error(result.err);
+        console.error("App got error:", result.err);
         return;
     }
+    console.log("App: worker connected!");
     // initialize the worker side
     // the `workerApi` name is derived from the wxWorker call
     // above, and is type-checked
     const { workerApi } = result.val;
+
+    console.log("App: calling worker.initialize()");
     // call the initialize() function defined on the WorkerSide
     // interface
     const ready = await workerApi.initialize();
@@ -48,13 +54,15 @@ const main = async () => {
     // handle the potential errors that happen during
     // communication
     if (ready.err) {
-        console.error(ready.err);
+        console.error("App got error:", ready.err);
         return;
     }
 
+    console.log("App: calling worker.process()");
+
     // do some work!
     const output = await workerApi.process("hello foo");
-    console.log(output);
+    console.log("App: got response from worker:", output);
 }
 
 // call our main function

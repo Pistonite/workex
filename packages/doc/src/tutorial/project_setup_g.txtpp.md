@@ -1,8 +1,11 @@
 # Project Setup
 
 We will use a bare-bone node project as the starting point.
-Create an empty directory and set up the content as follows, or you can
-clone the repo and use `packages/example-tutorial` directory.
+
+If you want to follow along from scratch, create an empty directory.
+Or, you can clone the repo and use `packages/example-tutorial` directory,
+which has all the code already there. (Code blocks on these tutorial pages actually pull
+code directly from those files)
 
 ## Project Structure
 The project should have `package.json`, `tsconfig.json` and a `src` directory
@@ -15,18 +18,28 @@ that is currently empty:
 ```
 
 Run the following to make sure you have `typescript` and `@pistonite/workex` installed.
-You can use any package manager.
+
+You can use any package manager - I am using `pnpm` as an example
 
 ```
-npm i -D typescript
-npm i @pistonite/workex
+pnpm i -D typescript 
+pnpm i @pistonite/workex
 ```
 
 ```admonish tip
 The `-D` flag means write the dependency as a `devDependency`.
 ```
 
-At a minimum, your `package.json` should contain:
+If you want to build and serve the example after the walk-through, also
+install `serve`, and make sure you have [`bun`](https://bun.sh/) callable
+from the command line. The easiest way to install both is:
+```
+pnpm i -D serve
+pnpm i -g bun
+```
+
+Your `package.json` should be similar to the following after installing those
+dependencies:
 ```json
 #TXTPP#include ../../../example-tutorial/package.json
 ```

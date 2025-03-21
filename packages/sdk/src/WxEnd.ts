@@ -53,7 +53,7 @@ export type WorkerLike = {
     addEventListener: (
         type: string,
         listener: (event: any) => any,
-        options?: { signal?: unknown },
+        options?: { signal?: any },
     ) => any;
     terminate?: (() => void) | null;
     /* eslint-enable @typescript-eslint/no-explicit-any */

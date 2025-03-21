@@ -11,6 +11,7 @@ import type { WorkerSide, AppSide } from "./Interfaces.ts";
 // to avoid issues with top-level await in older browsers
 // and be able to use early returns
 const main = async () => {
+    console.log("Worker: start");
     // create the binding up here since the handler
     // needs to reference the app side, which may or may not be ready
     // when the handler is called
@@ -23,11 +24,11 @@ const main = async () => {
     // to calls from the app
     const handler: WorkerSide = {
         initialize: async () => {
-            console.log("Worker initialized!");
+            console.log("Worker: (fakely) initialized!");
             return {};
         },
         process: async (input: string): WxPromise<string> => {
-            console.log("Processing input:", input);
+            console.log("Worker: processing input:", input);
             // wait for the binding to be set
             const app = await appApiPromise;
             // some example logic
@@ -55,7 +56,7 @@ const main = async () => {
         console.error(result.err);
         return;
     }
-    console.log("worker is fully ready!");
+    console.log("Worker: ready to be initialized!");
 }
 
 void main();

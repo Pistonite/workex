@@ -7,3 +7,14 @@ tasks:
     cmds:
       - cargo run --bin workex -- src/Interfaces.ts -p testapp -l AppSide,WorkerSide
       - pnpm exec tsc
+
+  build:
+    desc: Build the JS code
+    cmds:
+      - bun build src/App.ts > dist/index.js
+      - bun build src/Worker.ts > dist/worker.js
+
+  serve:
+    deps: [build]
+    cmds:
+      - pnpm exec serve dist

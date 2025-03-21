@@ -1,7 +1,7 @@
 # Define Interfaces
 
 The interfaces used for communication can be defined in one or more TypeScript
-files, here, we will create one `src/Interfaces.ts` file that contains
+files. Here, we will create one `src/Interfaces.ts` file that contains
 2 interfaces `AppSide` and `WorkerSide`. These interfaces can have any names
 that doesn't start with `_` (to avoid name conflicts in generated code)
 
@@ -22,10 +22,11 @@ the output through the function return.
 
 ```admonish note
 Important rules to note:
-1. The interfaces must be declared with `export interface`. `export type` and `declare`s
-   are ignored.
+1. The interfaces must be declared with `export interface`. 
+   Other syntaxes are ignored even if they are technically the same in TypeScript, such as `export type` and `declare`
 2. The interfaces cannot contain constructor, getter, or setter signature; only regular functions
-3. The functions must return a `WxPromise` type.
+3. The functions must return a `WxPromise` type. The import can be renamed, but type alias
+   is not supported, as the CLI current doesn't resolve types.
 
 Some of these might be supported in the future, but as for now, these rules help simplify
 the parsing
