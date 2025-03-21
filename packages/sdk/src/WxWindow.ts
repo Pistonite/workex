@@ -34,6 +34,7 @@ export type WindowLike = {
     };
     open: (url: string, target: string, features: string) => WindowLike | null;
     close?: () => void;
+    closed?: boolean;
     /* eslint-enable @typescript-eslint/no-explicit-any */
 };
 
@@ -187,13 +188,21 @@ export const wxWindow = (): WxResult<WxWindow> => {
             return { err: wxFail("Failed to open popup") };
         }
 
+        // handle interaction with the popup window:
+        // - when main window is closed, popup should also be closed
+        // - when popup is closed, close the connection
+        // - when the connection is closed, close the popup
+
         const onClose = options?.onClose;
         if (onClose) {
             targetWindow.addEventListener("pagehide", onClose);
         }
 
         const close = () => {
-            targetWindow?.close?.();
+            if (!targetWindow || targetWindow.closed) {
+                return;
+            }
+            targetWindow.close?.();
         };
 
         return await linkToTargetWindow(

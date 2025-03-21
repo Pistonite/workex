@@ -66,7 +66,9 @@ export type WorkerLike = {
  * they should not be used with this function because messaging between
  * `Window`s and `Worker`s are different.
  *
- * Please see TODO for more details
+ * The worker will be terminated if the connection cannot be established.
+ * After the connection is established, the worker will be terminated when
+ * the `WxEnd` is closed.
  *
  * @param onRecv callback to register when receiving a message from the other end
  */
@@ -75,6 +77,13 @@ export const wxMakeWorkerEnd = async (
     onRecv: WxEndRecvFn,
     options?: WxEndOptions,
 ): Promise<WxResult<WxEnd>> => {
+
+    // note that we are not handling worker.onerror and worker.onmessageerror.
+    // worker.onerror could be triggered by user-land uncaught errors
+    // in the worker can could be completely unrelated to us. messageerror
+    // can only be triggered if there's an internal bug in the browser
+    // or implementation of the SDK
+
     const controller = wxMakeMessageController(
         false,
         options?.timeout,
@@ -87,6 +96,7 @@ export const wxMakeWorkerEnd = async (
         },
     );
     if (controller.err) {
+        worker.terminate?.();
         return controller;
     }
 
@@ -215,6 +225,10 @@ export const wxMakeChannel = (
         }
     };
     const close = () => {
+        // ensure we only close once
+        if (isClosed) {
+            return;
+        }
         notifyClose();
         isClosed = true;
     };
@@ -229,6 +243,7 @@ export const wxMakeEnd = (
     close: () => void,
     isClosed: () => boolean,
 ): WxEnd => {
+    let endClosed = false;
     const subscribers: (() => void)[] = [];
     const onClose = (callback: () => void) => {
         subscribers.push(callback);
@@ -246,14 +261,20 @@ export const wxMakeEnd = (
     };
     return {
         send: (message) => {
-            if (isClosed()) {
+            if (endClosed || isClosed()) {
                 return { err: { code: "Closed" } };
             }
             send(message);
             return {};
         },
         close: () => {
+            // ensure we only close once
+            if (endClosed) {
+                return;
+            }
+            endClosed = true;
             notifyClose();
+            // close the underlying channel
             close();
         },
         onClose,

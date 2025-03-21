@@ -38,13 +38,15 @@ const main = async () => {
     // handle error in initialization of the connection
     if (result.err) {
         console.error("App got error:", result.err);
+        // note if the connection fails, the worker will be terminated
+        // automatically
         return;
     }
     console.log("App: worker connected!");
     // initialize the worker side
     // the `workerApi` name is derived from the wxWorker call
     // above, and is type-checked
-    const { workerApi } = result.val;
+    const { connection, protocols: { workerApi }} = result.val;
 
     console.log("App: calling worker.initialize()");
     // call the initialize() function defined on the WorkerSide
@@ -55,6 +57,10 @@ const main = async () => {
     // communication
     if (ready.err) {
         console.error("App got error:", ready.err);
+        // after connection is established, errors don't close
+        // the connection. you can manually close the connection
+        // with connection.close() or worker.terminate()
+        connection.close();
         return;
     }
 

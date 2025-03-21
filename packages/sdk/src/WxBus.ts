@@ -59,7 +59,7 @@ export type WxBusRecvHandler = (
  */
 export type WxBusCreator = <TConfig extends WxProtocolConfig>(
     config: TConfig,
-) => Promise<WxResult<WxProtocolOutput<TConfig>>>;
+) => Promise<WxResult<WxCreateBusOutput<TConfig>>>;
 
 /**
  * Internal function used by creator functions to create the bus.
@@ -69,7 +69,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
     endCreator: (onRecv: WxEndRecvFn) => Promise<WxResult<WxEnd>>,
     config: TConfig,
     timeout?: number,
-): Promise<WxResult<WxProtocolOutput<TConfig>>> => {
+): Promise<WxResult<WxCreateBusOutput<TConfig>>> => {
     if (!timeout || timeout < 0) {
         timeout = 60000;
     }
@@ -296,6 +296,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
             console.error(
                 `[workex] bus failed to query protocols, communication not established!`,
             );
+            end.close();
             return res;
         }
     }
@@ -327,7 +328,9 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
         ](new WxProtocolBoundSenderImpl(sender, protocol));
     }
 
-    return { val: keyToSender as WxProtocolOutput<TConfig> };
+    return { val: {
+        connection: end,
+        protocols: keyToSender as WxProtocolOutput<TConfig> }};
 };
 
 /**
@@ -462,6 +465,20 @@ const shallowEqual = (a: string[], b: string[]) => {
     }
     return true;
 };
+
+export type WxCreateBusOutput<TConfig extends WxProtocolConfig> = {
+    connection: WxBusHandle;
+    protocols: WxProtocolOutput<TConfig>;
+};
+
+export type WxBusHandle = {
+    /** Close the bus, and the underlying connection */
+    close: () => void;
+    /**
+     * Add a subscriber to be called when the underlying connection is closed
+     */
+    onClose: (callback: () => void) => () => void;
+}
 
 /**
  * Output of wxCreateBus
