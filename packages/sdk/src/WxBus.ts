@@ -128,31 +128,36 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
             if (f === wxFuncProtocol) {
                 const receivedQuery = d as string[];
                 if (m === 0) {
+                    const agree = shallowEqual(protocolQuery, receivedQuery);
                     // query
                     const res = end.send({
                         s: wxInternalProtocol,
                         p: wxInternalProtocol,
-                        m: shallowEqual(protocolQuery, receivedQuery) ? 1 : 2, // agree or disagree
+                        m: agree ? 1 : 2, // agree or disagree
                         f: wxFuncProtocol,
                         d: protocolQuery,
                     });
-                    if (res.err) {
-                        resolveProtocol({ err: res.err });
-                    } else {
-                        resolveProtocol({});
+                    if (agree) {
+                        if (res.err) {
+                            resolveProtocol({ err: res.err });
+                        } else {
+                            resolveProtocol({});
+                        }
+                        return;
                     }
                 } else if (m === 1) {
                     // agree
                     resolveProtocol({});
-                } else {
-                    // disagree
-                    resolveProtocol({
-                        err: {
-                            code: "ProtocolDisagree",
-                            message: `received: ${receivedQuery.join(", ")}, expected: ${protocolQuery.join(", ")}}`,
-                        },
-                    });
+                    return;
                 }
+
+                // disagree
+                resolveProtocol({
+                    err: {
+                        code: "ProtocolDisagree",
+                        message: `received: ${receivedQuery.join(", ")}, expected: ${protocolQuery.join(", ")}}`,
+                    },
+                });
                 return;
             }
             console.warn(

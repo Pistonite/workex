@@ -1,67 +1,31 @@
 <html>
     <head>
+        <style>
+        p {
+            margin: 0;
+        }
+        </style>
     </head>
     <body>
-        <script>
-const worker = new Worker("worker.js");
-worker.postMessage(1);
-console.log(2);
-// wait for 1 second synchronously
-const start = performance.now()
-while (performance.now() - start < 1000) {}
-console.log(3);
-        </script>
-        Main
-        <button id="thebutton" >Open</button>
-        <button id="thebutton2" >Send</button>
-        <button id="thebutton3" >Send iframe</button>
-        <iframe src="http://localhost:4001" id="theiframe"></iframe>
-        <iframe src="http://localhost:4001" id="theiframe2"></iframe>
+        <h3>Owner</h3>
+        <div id="div-owner-buttons"></div>
 
-        <!-- <script> -->
-        <!-- let first = undefined; -->
-        <!-- window.addEventListener("message", (x) => { -->
-        <!--     if (x.data?.source === "react-devtools-content-script") { -->
-        <!--         return; -->
-        <!--     } -->
-        <!--     console.log("message from window", x); -->
-        <!--     if (x.source === first) { -->
-        <!--         console.log(x.source === first); -->
-        <!--         x.source.postMessage("got your message", "http://localhost:4001"); -->
-        <!--     } -->
-        <!--     if (x.source === theiframe.contentWindow) { -->
-        <!--         console.log("frame 1"); -->
-        <!--         x.source.postMessage("got your message, frame 1", "http://localhost:4001"); -->
-        <!--     } -->
-        <!--     if (x.source === theiframe2.contentWindow) { -->
-        <!--         console.log("frame 2"); -->
-        <!--         x.source.postMessage("got your message, frame 2", "http://localhost:4001"); -->
-        <!--          -->
-        <!--     } -->
-        <!-- }); -->
-        <!-- thebutton.addEventListener("click", () => { -->
-        <!--     const w = window.open("http://localhost:4001", "_blank", "popup"); -->
-        <!--     if (!w) { -->
-        <!--         console.error("open failed") -->
-        <!--     } -->
-        <!--     w.addEventListener("message", (x) => { -->
-        <!--         console.log("message from w", x) -->
-        <!--     }); -->
-        <!--     if (!first) { -->
-        <!--         first  = w; -->
-        <!--         console.log("first is set") -->
-        <!--     } -->
-        <!-- }); -->
-        <!-- thebutton2.addEventListener("click", () => { -->
-        <!--     if (first) { -->
-        <!--         first.postMessage("hello from main", "http://localhost:4001"); -->
-        <!--     } -->
-        <!-- }); -->
-        <!-- thebutton3.addEventListener("click", () => { -->
-        <!--         theiframe.contentWindow.postMessage("hello from main", "http://localhost:4001"); -->
-        <!--      -->
-        <!-- }); -->
-        <!--      -->
-        <!-- </script> -->
+        <h3>Popup Windows</h3>
+        <h4>Same-Origin</h4>
+        <div id="div-popup-same-origin-buttons"></div>
+        <h4>Cross-Origin</h4>
+        <div id="div-popup-cross-origin-buttons"></div>
+
+        <h3>IFrames</h3>
+        <h4>Same-Origin</h4>
+        <div id="div-iframe-same-origin-buttons"></div>
+        <h4>Cross-Origin</h4>
+        <div id="div-iframe-cross-origin-buttons"></div>
+
+        <div id="div-frames">
+        </div>
+        <div id="div-messages"></div>
+
+        <script src="index.js"></script>
     </body>
 </html>

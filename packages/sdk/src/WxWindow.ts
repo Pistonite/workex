@@ -91,9 +91,12 @@ export type WxWindowOpenOptions = WxEndOptions & {
     width?: number;
     height?: number;
     /**
-     * Decides what to do when close() is called from the popup.
+     * Callback to be invoked when the popup is closed.
      *
-     * This callback will be registered to the pagehide event of the popup window
+     * The popup can be closed in one of the following ways:
+     * - The user closes the popup window
+     * - The user closes the main window (in which case the popup will be closed automatically)
+     * - Underlying connection is closed by either end
      */
     onClose?: () => void;
 };

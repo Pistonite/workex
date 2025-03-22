@@ -6,6 +6,9 @@ includes:
     internal: true
 
 tasks:
+  build:
+    cmds:
+      - cargo run --bin workex -- -p multiwindow -l SideA,SideB src/proto.ts
   install:
     cmds:
       - task: ecma:mono-config

@@ -107,7 +107,7 @@ fn emit_interface_impl(
         "};"
     };
 
-    let output = cconcat![
+    let mut code = cconcat![
         header(),
         // import from parent directory since we are inside interfaces/
         format!(
@@ -122,15 +122,21 @@ fn emit_interface_impl(
         " * They should not be used directly!",
         " */",
         "",
-        interface.comment.to_code(),
-        sender_decl,
-        "",
-        interface.comment.to_code(),
-        recver_decl,
     ];
 
+    let comment = interface.comment.to_code();
+    if let Some(comment) = comment.clone() {
+        code.push(comment);
+    }
+    code.push(sender_decl.into());
+    code.push("".into());
+    if let Some(comment) = comment {
+        code.push(comment);
+    }
+    code.push(recver_decl.into());
+
     let path = out_dir.join(format!("{}.ts", interface.name));
-    write_file(&path, output.to_string())?;
+    write_file(&path, code.to_string())?;
 
     Ok(())
 }

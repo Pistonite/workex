@@ -11,12 +11,15 @@ pub struct CommentBlock {
 
 impl CommentBlock {
     /// Convert this comment block to string representation
-    pub fn to_code(&self) -> Code {
+    pub fn to_code(&self) -> Option<Code> {
+        if self.lines.is_empty() {
+            return None;
+        }
         match self.style {
             CommentStyle::TripleSlash => {
-                cconcat!(self.lines.iter().map(|line| format!("/// {line}"))).into()
+                Some(cconcat!(self.lines.iter().map(|line| format!("/// {line}"))).into())
             }
-            CommentStyle::JsDoc => cconcat![
+            CommentStyle::JsDoc => {Some(cconcat![
                 "/**",
                 cconcat!(self.lines.iter().map(|line| {
                     if line.starts_with("* ") {
@@ -27,7 +30,7 @@ impl CommentBlock {
                 })),
                 " */"
             ]
-            .into(),
+            .into())}
         }
     }
 }

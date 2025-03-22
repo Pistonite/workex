@@ -42,7 +42,10 @@ impl Function {
         .connected()
         .never_inlined();
 
-        cconcat!["", comment, function_decl, function_body].into()
+        match comment {
+            Some(comment) => cconcat!["", comment, function_decl, function_body].into(),
+            None => cconcat!["", function_decl, function_body].into(),
+        }
     }
 
     /// Generate code for implementation in the receiver "switch" statement
