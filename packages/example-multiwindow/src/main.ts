@@ -1,9 +1,14 @@
-import { type WxBusCreator, wxFrame, wxPopup, wxWindowOwner, wxWrapHandler } from "@pistonite/workex";
+import {
+    type WxBusCreator,
+    wxFrame,
+    wxPopup,
+    wxWindowOwner,
+    wxWrapHandler,
+} from "@pistonite/workex";
 
 import type { SideA, SideB } from "./proto.ts";
 import { multiwindowSideA } from "./interfaces/SideA.bus";
 import { multiwindowSideB } from "./interfaces/SideB.bus";
-
 
 const addMessage = (message: string) => {
     const elem = document.getElementById("div-messages") as HTMLDivElement;
@@ -22,7 +27,7 @@ const main = async () => {
         const sideB: SideB = {
             logMessage: wxWrapHandler((message: string) => {
                 addMessage(`received from owner: ${message}`);
-            })
+            }),
         };
 
         const result = await wxWindowOwner(ownerOrigin)({
@@ -30,10 +35,17 @@ const main = async () => {
         });
 
         if (result.err) {
-            addMessage(`failed to connect to owner: ${JSON.stringify(result.err)}`);
+            addMessage(
+                `failed to connect to owner: ${JSON.stringify(result.err)}`,
+            );
         } else {
-            const { connection, protocols: { sideA } } = result.val;
-            const divOwnerButtons = document.getElementById("div-owner-buttons") as HTMLDivElement;
+            const {
+                connection,
+                protocols: { sideA },
+            } = result.val;
+            const divOwnerButtons = document.getElementById(
+                "div-owner-buttons",
+            ) as HTMLDivElement;
             const closeButton = document.createElement("button");
             closeButton.innerText = "Close";
             closeButton.addEventListener("click", async () => {
@@ -48,7 +60,9 @@ const main = async () => {
                 addMessage("sending to owner");
                 const result = await sideA.logMessage("hello hey hey");
                 if (result.err) {
-                    addMessage(`failed to send to owner: ${JSON.stringify(result.err)}`);
+                    addMessage(
+                        `failed to send to owner: ${JSON.stringify(result.err)}`,
+                    );
                 } else {
                     addMessage("returned from owner");
                 }
@@ -58,24 +72,22 @@ const main = async () => {
         }
     }
 
-    setupDiv(
-        "div-popup-same-origin-buttons", 
-        "same-origin popup",
-        () => wxPopup(getOpenUrl(true), {
-            width: 400,height: 800,
-        })
+    setupDiv("div-popup-same-origin-buttons", "same-origin popup", () =>
+        wxPopup(getOpenUrl(true), {
+            width: 400,
+            height: 800,
+        }),
+    );
+
+    setupDiv("div-popup-cross-origin-buttons", "cross-origin popup", () =>
+        wxPopup(getOpenUrl(false), {
+            width: 400,
+            height: 800,
+        }),
     );
 
     setupDiv(
-        "div-popup-cross-origin-buttons", 
-        "cross-origin popup",
-        () => wxPopup(getOpenUrl(false), {
-            width: 400,height: 800,
-        })
-    );
-
-    setupDiv(
-        "div-iframe-same-origin-buttons", 
+        "div-iframe-same-origin-buttons",
         "same-origin iframe",
         (frame) => wxFrame(frame as HTMLIFrameElement),
         () => {
@@ -83,11 +95,11 @@ const main = async () => {
             frame.height = "800px";
             frame.src = getOpenUrl(true);
             return frame;
-        }
+        },
     );
 
     setupDiv(
-        "div-iframe-cross-origin-buttons", 
+        "div-iframe-cross-origin-buttons",
         "cross-origin iframe",
         (frame) => wxFrame(frame as HTMLIFrameElement),
         () => {
@@ -95,11 +107,16 @@ const main = async () => {
             frame.height = "800px";
             frame.src = getOpenUrl(false);
             return frame;
-        }
+        },
     );
 };
 
-const setupDiv = (id: string, name: string, creator: (frame?: HTMLIFrameElement) => WxBusCreator, iframe?: () => HTMLIFrameElement) => {
+const setupDiv = (
+    id: string,
+    name: string,
+    creator: (frame?: HTMLIFrameElement) => WxBusCreator,
+    iframe?: () => HTMLIFrameElement,
+) => {
     const div = document.getElementById(id) as HTMLDivElement;
     const openButton = document.createElement("button");
     openButton.innerText = "Open";
@@ -109,12 +126,14 @@ const setupDiv = (id: string, name: string, creator: (frame?: HTMLIFrameElement)
         const sideA: SideA = {
             logMessage: wxWrapHandler((message: string) => {
                 addMessage(`received from ${name}: ${message}`);
-            })
+            }),
         };
 
         const frame = iframe?.();
         if (frame) {
-            const divFrames = document.getElementById("div-frames") as HTMLDivElement;
+            const divFrames = document.getElementById(
+                "div-frames",
+            ) as HTMLDivElement;
             divFrames.appendChild(frame);
         }
 
@@ -127,7 +146,10 @@ const setupDiv = (id: string, name: string, creator: (frame?: HTMLIFrameElement)
             return;
         }
 
-        const { connection, protocols: { sideB } } = result.val;
+        const {
+            connection,
+            protocols: { sideB },
+        } = result.val;
 
         connection.onClose(() => {
             addMessage(`closed ${name}`);
@@ -153,7 +175,9 @@ const setupDiv = (id: string, name: string, creator: (frame?: HTMLIFrameElement)
             addMessage(`sending to ${name}`);
             const result = await sideB.logMessage("hello hey hey");
             if (result.err) {
-                addMessage(`failed to send to ${name}: ${JSON.stringify(result.err)}`);
+                addMessage(
+                    `failed to send to ${name}: ${JSON.stringify(result.err)}`,
+                );
             } else {
                 addMessage(`returned from ${name}`);
             }
@@ -164,15 +188,21 @@ const setupDiv = (id: string, name: string, creator: (frame?: HTMLIFrameElement)
     });
 
     div.appendChild(openButton);
-}
+};
 
 const getOpenUrl = (sameOrigin: boolean) => {
     const url = new URL(window.location.href);
     if (url.port === (sameOrigin ? "4000" : "4001")) {
-        return "http://localhost:4000/index.html" + `?ownerOrigin=${window.location.origin}`;
+        return (
+            "http://localhost:4000/index.html" +
+            `?ownerOrigin=${window.location.origin}`
+        );
     }
 
-    return "http://localhost:4001/index.html" + `?ownerOrigin=${window.location.origin}`;
-}
+    return (
+        "http://localhost:4001/index.html" +
+        `?ownerOrigin=${window.location.origin}`
+    );
+};
 
 void main();

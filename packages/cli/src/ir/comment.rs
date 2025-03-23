@@ -19,18 +19,20 @@ impl CommentBlock {
             CommentStyle::TripleSlash => {
                 Some(cconcat!(self.lines.iter().map(|line| format!("/// {line}"))).into())
             }
-            CommentStyle::JsDoc => {Some(cconcat![
-                "/**",
-                cconcat!(self.lines.iter().map(|line| {
-                    if line.starts_with("* ") {
-                        format!(" {line}")
-                    } else {
-                        format!(" * {line}")
-                    }
-                })),
-                " */"
-            ]
-            .into())}
+            CommentStyle::JsDoc => Some(
+                cconcat![
+                    "/**",
+                    cconcat!(self.lines.iter().map(|line| {
+                        if line.starts_with("* ") {
+                            format!(" {line}")
+                        } else {
+                            format!(" * {line}")
+                        }
+                    })),
+                    " */"
+                ]
+                .into(),
+            ),
         }
     }
 }

@@ -56,7 +56,7 @@ tasks:
 
   test:
     cmds:
-      - task: ex-tutorial:run
+      - task: ex-tutorial:gen
 
   typedoc:
     cmds:

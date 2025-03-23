@@ -1,6 +1,5 @@
 import type { WxPromise } from "@pistonite/workex";
 
-
 export interface SideA {
     logMessage(message: string): WxPromise<void>;
 }
