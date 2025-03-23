@@ -1,6 +1,8 @@
 packages:
-  - packages/ts-sdk
+  - packages/sdk
   - packages/mono-dev
-  - packages/test
-  - packages/example-standalone
-  - packages/example-vite
+  - packages/example-multiwindow
+  - packages/example-tutorial
+onlyBuiltDependencies:
+  - '@swc/core'
+  - esbuild

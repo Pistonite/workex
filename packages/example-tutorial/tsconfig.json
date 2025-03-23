@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "noEmit": true,
+        "lib": ["esnext", "dom"],
+        "target": "esnext",
+        "useDefineForClassFields": true,
+        "moduleDetection": "force",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "isolatedModules": true,
+        "strict": true,
+        "skipLibCheck": true
+    },
+    "include": [ "src" ]
+}

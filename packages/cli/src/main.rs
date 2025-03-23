@@ -1,13 +1,50 @@
-use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
+use anyhow::Context as _;
 use clap::Parser;
-use error_stack::{report, Result, ResultExt};
 
-mod data;
-mod parse;
-use data::*;
 mod emit;
+mod ir;
+mod parse;
+
+/// Workex CLI Tool
+#[derive(Debug, Parser)]
+#[command(author, about, version, arg_required_else_help(true))]
+pub struct CliOptions {
+    /// Input TypeScript files with `export interface` declarations
+    ///
+    /// The input files must be in the same directory, which will also be
+    /// used as the output directory.
+    pub inputs: Vec<String>,
+
+    /// A string that will be used as the protocol identifier.
+    ///
+    /// If the string only contains lowercase alphabetic characters, it will be
+    /// also used as the prefix for generated functions. Otherwise, a prefix
+    /// is required to be specified.
+    #[clap(short, long)]
+    pub protocol: String,
+
+    /// Prefix for generated functions. The generated function names will
+    /// be this prefix + the interface name.
+    ///
+    /// Default is the same as protocol
+    #[clap(long)]
+    pub prefix: Option<String>,
+
+    /// Do not generate the .gitignore file
+    #[clap(long)]
+    pub no_gitignore: bool,
+
+    /// Link 2 interfaces together. The 2 interfaces should be separated with a comma (,).
+    /// Multiple `-l` flags can be used to link more pairs of interfaces.
+    #[clap(short, long)]
+    pub link: Vec<String>,
+
+    /// Specify the name of the output directory.
+    #[clap(long, default_value = "interfaces")]
+    pub dir: String,
+}
 
 fn main() -> ExitCode {
     match main_internal() {
@@ -19,65 +56,14 @@ fn main() -> ExitCode {
     }
 }
 
-fn main_internal() -> Result<(), Error> {
+fn main_internal() -> anyhow::Result<()> {
     let cli = CliOptions::parse();
 
-    let out_dir = get_out_dir(&cli.inputs)?;
-    let interfaces = parse::parse(&cli.inputs).change_context(Error::Parse)?;
+    let interfaces =
+        parse::load_interfaces_from_inputs(&cli.inputs).context("Failed to parse input files")?;
+    let package = ir::Package::try_new(&cli, interfaces)?;
 
-    let pkg = Package {
-        out_dir,
-        interfaces,
-    };
-
-    emit::emit(&pkg, &cli).change_context(Error::Emit)?;
-    println!("{} interfaces generated", pkg.interfaces.len());
+    emit::emit(&package).context("Failed to emit output")?;
+    println!("{} interfaces generated", package.interfaces.len());
     Ok(())
-}
-
-#[derive(Debug, thiserror::Error)]
-enum Error {
-    #[error("Invalid argument")]
-    InvalidArg,
-    #[error("Fail to parse inputs")]
-    Parse,
-    #[error("Fail to emit output")]
-    Emit,
-}
-
-fn get_out_dir(inputs: &[String]) -> Result<PathBuf, Error> {
-    let out_dir = match inputs.first() {
-        None => {
-            return Err(report!(Error::InvalidArg)).attach_printable("No input files provided");
-        }
-        Some(path) => get_parent_dir(path)?,
-    };
-    for input in inputs.iter().skip(1) {
-        let path = get_parent_dir(input)?;
-        if path != out_dir {
-            return Err(report!(Error::InvalidArg)).attach_printable(format!(
-                "Input files are not in the same directory: {} and {}",
-                out_dir.display(),
-                path.display()
-            ));
-        }
-    }
-    Ok(out_dir)
-}
-
-fn get_parent_dir(path: &str) -> Result<PathBuf, Error> {
-    let p = Path::new(path);
-
-    if !p.exists() {
-        return Err(report!(Error::InvalidArg))
-            .attach_printable(format!("Input file does not exist: {}", path));
-    }
-
-    let parent = p
-        .parent()
-        .ok_or_else(|| report!(Error::InvalidArg).attach_printable("Input file has no parent."))?;
-
-    dunce::canonicalize(parent)
-        .change_context_lazy(|| Error::InvalidArg)
-        .attach_printable_lazy(|| format!("Failed to canonicalize {}", parent.display()))
 }

@@ -1,0 +1,9 @@
+{
+    "dependencies": {
+        "@pistonite/workex": "workspace:*"
+    },
+    "devDependencies": {
+        "serve": "^14.2.4",
+        "typescript": "^5.7.2"
+    }
+}

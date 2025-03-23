@@ -1,6 +1,6 @@
 {
     "entryPoints": [
-        "packages/ts-sdk"
+        "packages/sdk"
     ],
     "name": "workex",
     "entryPointStrategy": "packages",

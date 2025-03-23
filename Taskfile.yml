@@ -1,17 +1,25 @@
 version: '3'
 
 includes:
+  common:
+    taskfile: ./packages/mono-dev/task/common.yaml
+    flatten: true
+
   cli:
     taskfile: ./packages/cli
     dir: ./packages/cli
 
-  test:
-    taskfile: ./packages/test
-    dir: ./packages/test
+  ex-tutorial:
+    taskfile: ./packages/example-tutorial
+    dir: ./packages/example-tutorial
 
-  ts-sdk:
-    taskfile: ./packages/ts-sdk
-    dir: ./packages/ts-sdk
+  ex-multiwindow:
+    taskfile: ./packages/example-multiwindow
+    dir: ./packages/example-multiwindow
+
+  sdk:
+    taskfile: ./packages/sdk
+    dir: ./packages/sdk
 
   doc:
     taskfile: ./packages/doc
@@ -21,7 +29,7 @@ tasks:
   install-cargo-extra-tools:
     aliases: [icets]
     cmds:
-      - cargo install txtpp mdbook mdbook-admonish live-server magoo
+      - cargo install txtpp mdbook mdbook-admonish live-server magoo cargo-watch
 
   install:
     cmds:
@@ -37,16 +45,18 @@ tasks:
   post-install:
     cmds:
       - task: doc:install
-      - task: ts-sdk:install
+      - task: sdk:install
       
   check:
     cmds:
       - task: cli:check
-      - task: ts-sdk:check
+      - task: sdk:check
+      - task: ex-multiwindow:generate
+      - task: ex-multiwindow:check
 
   test:
     cmds:
-      - task: test:run
+      - task: ex-tutorial:gen
 
   typedoc:
     cmds:
