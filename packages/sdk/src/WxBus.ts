@@ -6,6 +6,7 @@ import { errstr } from "@pistonite/pure/result";
 import type { WxEnd, WxEndRecvFn } from "./WxEnd.ts";
 import type { WxError, WxPromise, WxResult, WxVoid } from "./WxError.ts";
 import {
+    type WxCloseController,
     wxFuncProtocol,
     wxFuncReturn,
     wxFuncReturnError,
@@ -333,9 +334,12 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
         ](new WxProtocolBoundSenderImpl(sender, protocol));
     }
 
-    return { val: {
-        connection: end,
-        protocols: keyToSender as WxProtocolOutput<TConfig> }};
+    return {
+        val: {
+            connection: end,
+            protocols: keyToSender as WxProtocolOutput<TConfig>,
+        },
+    };
 };
 
 /**
@@ -471,19 +475,13 @@ const shallowEqual = (a: string[], b: string[]) => {
     return true;
 };
 
+/** Output of a bus creator function */
 export type WxCreateBusOutput<TConfig extends WxProtocolConfig> = {
-    connection: WxBusHandle;
+    /** The handle that can be used to control the connection */
+    connection: WxCloseController;
+    /** Bound protocol senders for the handlers passed in as config */
     protocols: WxProtocolOutput<TConfig>;
 };
-
-export type WxBusHandle = {
-    /** Close the bus, and the underlying connection */
-    close: () => void;
-    /**
-     * Add a subscriber to be called when the underlying connection is closed
-     */
-    onClose: (callback: () => void) => () => void;
-}
 
 /**
  * Output of wxCreateBus

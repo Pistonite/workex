@@ -48,6 +48,14 @@ const main = async () => {
     // above, and is type-checked
     const { connection, protocols: { workerApi }} = result.val;
 
+    // the returned connection handle can be used to control the connection.
+    // for example, register a callback to be called when the connection is closed
+    void connection.onClose(() => {
+        console.log("App: connection closed");
+    });
+    // the onClose() function returns a function that can be called
+    // to unregister the listener.
+
     console.log("App: calling worker.initialize()");
     // call the initialize() function defined on the WorkerSide
     // interface

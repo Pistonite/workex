@@ -2,6 +2,10 @@ import { once } from "@pistonite/pure/sync";
 
 import type { WxResult, WxVoid } from "./WxError.ts";
 import {
+    type WxCloseController,
+    wxFuncClose,
+    wxInternalProtocol,
+    wxMakeCloseController,
     wxMakeMessageController,
     type WxMessage,
     type WxPayload,
@@ -18,17 +22,9 @@ import {
  * is that any valid `WxEnd` objects you create with functions in this library will
  * first establish the handshake.
  */
-export type WxEnd = {
+export type WxEnd = WxCloseController & {
     /** Send a message to the other end */
     send: (message: WxMessage) => WxVoid;
-    /** Close this end. This may or may not notify the other end about the closing */
-    close: () => void;
-    /**
-     * Add a subscriber to be called when close() is called, before the end is actually closed
-     *
-     * Returns a function that can be called to remove the subscriber
-     */
-    onClose: (callback: () => void) => () => void;
 };
 
 export type WxEndRecvFn = (message: WxPayload) => void | Promise<void>;
@@ -77,7 +73,6 @@ export const wxMakeWorkerEnd = async (
     onRecv: WxEndRecvFn,
     options?: WxEndOptions,
 ): Promise<WxResult<WxEnd>> => {
-
     // note that we are not handling worker.onerror and worker.onmessageerror.
     // worker.onerror could be triggered by user-land uncaught errors
     // in the worker can could be completely unrelated to us. messageerror
@@ -100,18 +95,27 @@ export const wxMakeWorkerEnd = async (
         return controller;
     }
 
-    const { start, close: closeController, isClosed } = controller.val;
+    const { start, close, isClosed, onClose } = controller.val;
+
+    // terminate the worker when the connection is closed
+    void onClose(() => {
+        worker.terminate?.();
+    });
 
     await start();
 
-    const end = wxMakeEnd(
-        (message) => worker.postMessage(message),
-        () => {
-            closeController();
-            worker.terminate?.();
+    const end: WxEnd = {
+        send: (message) => {
+            if (isClosed()) {
+                return { err: { code: "Closed" } };
+            }
+            worker.postMessage(message);
+            return {};
         },
+        close,
+        onClose,
         isClosed,
-    );
+    };
 
     return { val: end };
 };
@@ -160,17 +164,35 @@ export const wxMakeWorkerGlobalEnd = once({
             return controller;
         }
 
-        const { start, close, isClosed } = controller.val;
+        const { start, close, isClosed, onClose } = controller.val;
+
+        // onclose, tell the host (passive) end to terminate us
+        void onClose(() => {
+            (globalThis as unknown as WorkerLike).postMessage({
+                s: wxInternalProtocol,
+                p: wxInternalProtocol,
+                m: 1,
+                f: wxFuncClose,
+                d: "close",
+            });
+        });
 
         await start();
-        const end = wxMakeEnd(
-            (message) => {
-                (globalThis as unknown as WorkerLike).postMessage(message);
+
+        return {
+            val: {
+                send: (message) => {
+                    if (isClosed()) {
+                        return { err: { code: "Closed" } };
+                    }
+                    (globalThis as unknown as WorkerLike).postMessage(message);
+                    return {};
+                },
+                close,
+                onClose,
+                isClosed,
             },
-            close,
-            isClosed,
-        );
-        return { val: end };
+        };
     },
 });
 
@@ -184,13 +206,19 @@ export const wxMakeChannel = (
     onRecvA: WxEndRecvFn,
     onRecvB: WxEndRecvFn,
 ): [WxEnd, WxEnd] => {
-    let isClosed = false;
+    const { close, isClosed, onClose } = wxMakeCloseController();
+    // sending close message from either side is equivalent
+    // to calling close from either side
     const sendFromA = (message: WxMessage) => {
-        if (isClosed) {
+        if (isClosed()) {
             return { err: { code: "Closed" as const } };
         }
         setTimeout(() => {
-            if (isClosed) {
+            if (isClosed()) {
+                return;
+            }
+            if (message.p === wxInternalProtocol && message.f === wxFuncClose) {
+                close();
                 return;
             }
             onRecvB(message);
@@ -198,85 +226,49 @@ export const wxMakeChannel = (
         return {};
     };
     const sendFromB = (message: WxMessage) => {
-        if (isClosed) {
+        if (isClosed()) {
             return { err: { code: "Closed" as const } };
         }
         setTimeout(() => {
-            if (isClosed) {
+            if (isClosed()) {
+                return;
+            }
+            if (message.p === wxInternalProtocol && message.f === wxFuncClose) {
+                close();
                 return;
             }
             onRecvA(message);
         }, 0);
         return {};
     };
-    const subscribers: (() => void)[] = [];
-    const onClose = (callback: () => void) => {
-        subscribers.push(callback);
-        return () => {
-            const index = subscribers.indexOf(callback);
-            if (index !== -1) {
-                subscribers.splice(index, 1);
-            }
-        };
-    };
-    const notifyClose = () => {
-        for (const subscriber of subscribers) {
-            subscriber();
-        }
-    };
-    const close = () => {
-        // ensure we only close once
-        if (isClosed) {
-            return;
-        }
-        notifyClose();
-        isClosed = true;
-    };
     return [
-        { send: sendFromA, close, onClose },
-        { send: sendFromB, close, onClose },
+        { send: sendFromA, close, onClose, isClosed },
+        { send: sendFromB, close, onClose, isClosed },
     ];
 };
 
-export const wxMakeEnd = (
-    send: (message: WxMessage) => void,
-    close: () => void,
-    isClosed: () => boolean,
-): WxEnd => {
-    let endClosed = false;
-    const subscribers: (() => void)[] = [];
-    const onClose = (callback: () => void) => {
-        subscribers.push(callback);
-        return () => {
-            const index = subscribers.indexOf(callback);
-            if (index !== -1) {
-                subscribers.splice(index, 1);
-            }
-        };
-    };
-    const notifyClose = () => {
-        for (const subscriber of subscribers) {
-            subscriber();
-        }
-    };
-    return {
-        send: (message) => {
-            if (endClosed || isClosed()) {
-                return { err: { code: "Closed" } };
-            }
-            send(message);
-            return {};
-        },
-        close: () => {
-            // ensure we only close once
-            if (endClosed) {
-                return;
-            }
-            endClosed = true;
-            notifyClose();
-            // close the underlying channel
-            close();
-        },
-        onClose,
-    };
-};
+// export const wxMakeEnd = (
+//     send: (message: WxMessage) => void,
+//     isClosed: () => boolean,
+// ): WxEnd => {
+//     return {
+//         send: (message) => {
+//             if (isClosed()) {
+//                 return { err: { code: "Closed" } };
+//             }
+//             send(message);
+//             return {};
+//         },
+//         close: () => {
+//             // ensure we only close once
+//             if (endClosed) {
+//                 return;
+//             }
+//             endClosed = true;
+//             notifyClose();
+//             // close the underlying channel
+//             close();
+//         },
+//         onClose,
+//     };
+// };

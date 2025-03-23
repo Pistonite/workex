@@ -39,7 +39,7 @@ You can install it with your favorite package manager. For example, for `pnpm`:
 pnpm i @pistonite/workex
 ```
 The [tutorials](./tutorial/index.md) shows basic examples for using the SDK.
-You can also refer to the [API reference](https://workex.pistonite.dev/docs) when needed.
+You can also refer to the [SDK reference](./reference/index.md) when needed.
 
 Note that:
 - The SDK version and workex version should match exactly

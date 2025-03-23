@@ -11,7 +11,6 @@ export {
     wxMakeWorkerEnd,
     wxMakeWorkerGlobalEnd,
     wxMakeChannel,
-    wxMakeEnd,
 } from "./WxEnd.ts";
 
 export type {

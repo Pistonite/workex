@@ -1,24 +1,21 @@
+const runServer = (port: number) => {
+    console.log("running server on port", port)
+    Bun.serve({
+        hostname: "0.0.0.0",
+        port,
+        routes: {
+            "/": () => {
+                return new Response(Bun.file("dist/index.html"))
+            },
+            "/index.html": () => {
+                return new Response(Bun.file("dist/index.html"))
+            },
+            "/index.js": () => {
+                return new Response(Bun.file("dist/index.js"))
+            }
+        }
+    })
+};
 
-console.log("running first server")
-Bun.serve({
-    hostname: "0.0.0.0",
-    port: 4000,
-    routes: {
-        "/": () => {
-            return new Response(Bun.file("src/index.html"))
-        },
-        "/worker.js": () => {
-            return new Response(Bun.file("src/worker.js"))
-        }
-    }
-})
-console.log("running second server")
-Bun.serve({
-    hostname: "0.0.0.0",
-    port: 4001,
-    routes: {
-        "/": () => {
-            return new Response(Bun.file("src/popout.html"))
-        }
-    }
-})
+runServer(4000);
+runServer(4001);

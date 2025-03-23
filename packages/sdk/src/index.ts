@@ -15,6 +15,7 @@ export {
 export type { WxWorkerCreateOptions } from "./WxCreate.ts";
 
 // types used in public APIs
+export type { WxCloseController } from "./WxMessage.ts";
 export type {
     WxProtocolConfig,
     WxProtocolBindConfig,
@@ -22,6 +23,7 @@ export type {
     WxProtocolOutput,
     WxBusCreator,
     WxProtocolBoundSender,
+    WxCreateBusOutput,
 } from "./WxBus.ts";
 export type {
     WxFrameLinkOptions,

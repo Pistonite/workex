@@ -124,17 +124,7 @@ export const isWxMessageEvent = (
  * Controller for the lowest level of message passing using `MessageEvent`s.
  * This is used internally by {@link WxEnd}
  */
-export type WxMessageController = {
-    /**
-     * Mark the end as closed and unregisters all message handlers
-     * registered by the end. If handshake is still in progress, it will
-     * be aborted.
-     */
-    close: () => void;
-
-    /** Check if the end is closed */
-    isClosed: () => boolean;
-
+export type WxMessageController = WxCloseController & {
     /**
      * Start the handshake process.
      */
@@ -163,13 +153,22 @@ export const wxMakeMessageController = (
     if (!timeout || timeout <= 0) {
         timeout = 60000;
     }
-    let isClosed = false;
-    const generalController = new AbortController();
+
+    const { close, isClosed, onClose } = wxMakeCloseController();
+
+    const eventHandlerController = new AbortController();
+    // unregister the event handler when closing the channel
+    void onClose(() => {
+        eventHandlerController.abort();
+    });
+
     const handshakeController = new AbortController();
-    const close = () => {
-        isClosed = true;
-        generalController.abort();
+    const removeHandshakeCloseListener = onClose(() => {
         handshakeController.abort();
+    });
+    const cleanupHandshake = () => {
+        handshakeController.abort();
+        removeHandshakeCloseListener();
     };
 
     try {
@@ -178,7 +177,7 @@ export const wxMakeMessageController = (
                 return;
             }
             const { p, f } = event.data;
-            if (isClosed) {
+            if (isClosed()) {
                 return;
             }
             if (p === wxInternalProtocol) {
@@ -193,7 +192,7 @@ export const wxMakeMessageController = (
             }
             // route the message to the bus handler
             onRecv(event.data);
-        }, generalController.signal);
+        }, eventHandlerController.signal);
     } catch (e) {
         close();
         console.error(e);
@@ -221,7 +220,7 @@ export const wxMakeMessageController = (
                         if (p !== wxInternalProtocol) {
                             return;
                         }
-                        if (isClosed) {
+                        if (isClosed()) {
                             return;
                         }
                         if (f === wxFuncHandshake) {
@@ -229,7 +228,6 @@ export const wxMakeMessageController = (
                                 // got hello back from other side
                                 done = true;
                                 resolve({});
-                                handshakeController.abort();
                                 return;
                             }
                             console.warn(
@@ -289,7 +287,6 @@ export const wxMakeMessageController = (
                                     d: "hello",
                                 });
                                 resolve({});
-                                handshakeController.abort();
                                 return;
                             }
                             console.warn(
@@ -341,6 +338,7 @@ export const wxMakeMessageController = (
                 }, timeout);
             }),
         ]);
+        cleanupHandshake();
         clearTimeout(notice1);
         clearTimeout(notice2);
         clearTimeout(notice3);
@@ -350,5 +348,52 @@ export const wxMakeMessageController = (
         return result;
     };
 
-    return { val: { start, close, isClosed: () => isClosed } };
+    return { val: { start, close, isClosed, onClose } };
+};
+
+/**
+ * Controller for closing the messaging channel
+ */
+export type WxCloseController = {
+    /**
+     * Mark the channel as closed and unregisters all message handlers
+     * registered by the end. If handshake is still in progress, it will
+     * be aborted.
+     */
+    close: () => void;
+
+    /**
+     * Add a subscriber to the close event. The subscriber will be called
+     * when the end is closed at most once
+     */
+    onClose: (callback: () => void) => () => void;
+
+    /** Check if the end is closed */
+    isClosed: () => boolean;
+};
+
+export const wxMakeCloseController = (): WxCloseController => {
+    let isClosed = false;
+    const subscribers: (() => void)[] = [];
+    const onClose = (callback: () => void) => {
+        subscribers.push(callback);
+        return () => {
+            const index = subscribers.indexOf(callback);
+            if (index !== -1) {
+                subscribers.splice(index, 1);
+            }
+        };
+    };
+    const close = () => {
+        // ensure we only close once
+        if (isClosed) {
+            return;
+        }
+        isClosed = true;
+        for (const subscriber of subscribers) {
+            subscriber();
+        }
+    };
+
+    return { close, onClose, isClosed: () => isClosed };
 };

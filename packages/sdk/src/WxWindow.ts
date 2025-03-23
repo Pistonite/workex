@@ -6,7 +6,6 @@ import {
     type WxEnd,
     type WxEndOptions,
     type WxEndRecvFn,
-    wxMakeEnd,
 } from "./WxEnd.ts";
 import { wxFail, type WxResult } from "./WxError.ts";
 import {
@@ -25,7 +24,7 @@ export type WindowLike = {
     addEventListener: (
         type: string,
         listener: (event: any) => any,
-        options?: { signal?: unknown },
+        options?: { signal?: any },
     ) => any;
     opener?: WindowLike | null;
     parent?: WindowLike | null;
@@ -40,7 +39,7 @@ export type WindowLike = {
 
 export type IFrameLike = {
     src: string;
-    contentWindow: WindowLike;
+    contentWindow?: WindowLike | null;
 };
 
 const wxSameContextGlobalEndCreator = "__workex_scgec";
@@ -66,7 +65,10 @@ export type WxWindow = {
     ): Promise<WxResult<WxEnd>>;
 
     /**
-     * Open a Popup window and create a {@link WxEnd} for messaging to that window
+     * Open a Popup window and create a {@link WxEnd} for messaging to that window.
+     *
+     * The returned end is tied to the window. If either the window or the end is closed,
+     * the popup window and the connection will be closed.
      */
     popup(
         url: string,
@@ -90,24 +92,12 @@ export type WxWindow = {
 export type WxWindowOpenOptions = WxEndOptions & {
     width?: number;
     height?: number;
-    /**
-     * Callback to be invoked when the popup is closed.
-     *
-     * The popup can be closed in one of the following ways:
-     * - The user closes the popup window
-     * - The user closes the main window (in which case the popup will be closed automatically)
-     * - Underlying connection is closed by either end
-     */
-    onClose?: () => void;
 };
 
 /**
  * Options for linking to an iframe. See {@link wxFrame}
  */
-export type WxFrameLinkOptions = WxEndOptions & {
-    /** Decides what to do when close() is called from within the frame */
-    onClose?: () => void;
-};
+export type WxFrameLinkOptions = WxEndOptions;
 
 let wxWindowGlobal: WxWindow | undefined = undefined;
 
@@ -131,10 +121,6 @@ export const wxWindow = (): WxResult<WxWindow> => {
     }
     /* eslint-enable @typescript-eslint/no-explicit-any */
 
-    // prepare owner for linking
-    let owner: WxWindow["owner"];
-    const opener = (globalThis as unknown as WindowLike).opener;
-    const parent = (globalThis as unknown as WindowLike).parent;
     const selfOrigin = (globalThis as unknown as WindowLike).location?.origin;
     if (!selfOrigin) {
         return {
@@ -143,10 +129,16 @@ export const wxWindow = (): WxResult<WxWindow> => {
             },
         };
     }
-    if (parent) {
-        owner = createOwnerFnFor(parent, selfOrigin);
-    } else if (opener) {
+    // prepare owner for linking
+    let owner: WxWindow["owner"];
+    const opener = (globalThis as unknown as WindowLike).opener;
+    const parent = (globalThis as unknown as WindowLike).parent;
+    // we must check opener first, because window.parent can be self
+    // when opener is not self
+    if (opener) {
         owner = createOwnerFnFor(opener, selfOrigin);
+    } else if (parent) {
+        owner = createOwnerFnFor(parent, selfOrigin);
     } else {
         owner = () => Promise.resolve({ err: { code: "NoOwnerForWindow" } });
     }
@@ -191,31 +183,35 @@ export const wxWindow = (): WxResult<WxWindow> => {
             return { err: wxFail("Failed to open popup") };
         }
 
-        // handle interaction with the popup window:
-        // - when main window is closed, popup should also be closed
-        // - when popup is closed, close the connection
-        // - when the connection is closed, close the popup
-
-        const onClose = options?.onClose;
-        if (onClose) {
-            targetWindow.addEventListener("pagehide", onClose);
-        }
-
-        const close = () => {
-            if (!targetWindow || targetWindow.closed) {
-                return;
-            }
-            targetWindow.close?.();
-        };
-
-        return await linkToTargetWindow(
+        const end = await linkToTargetWindow(
             selfOrigin,
             targetWindow,
             targetOrigin,
             onRecv,
-            close,
             options,
         );
+        if (end.err) {
+            return end;
+        }
+
+        // when closing this page, also close the popup
+        const controllerClosePopupWhenClosingSelf = new AbortController();
+        (globalThis as unknown as WindowLike).addEventListener(
+            "pagehide",
+            end.val.close,
+            { signal: controllerClosePopupWhenClosingSelf.signal },
+        );
+        void end.val.onClose(() => {
+            controllerClosePopupWhenClosingSelf.abort();
+            // attempt to close the window, ignore errors
+            try {
+                targetWindow?.close?.();
+            } catch (e) {
+                console.error(e);
+            }
+        });
+
+        return end;
     };
 
     const frame = async (
@@ -236,13 +232,18 @@ export const wxWindow = (): WxResult<WxWindow> => {
             };
         }
 
-        const onClose = options?.onClose;
+        if (!iframe.contentWindow) {
+            return { err: wxFail("IFrame has no contentWindow") };
+        }
+
+        // for frames, there's no need to handle window open/close since it's embedded.
+        // user can call onClose themselves to decide what to do
+
         return await linkToTargetWindow(
             selfOrigin,
             iframe.contentWindow,
             targetOrigin,
             onRecv,
-            onClose ?? (() => {}),
             options,
         );
     };
@@ -283,6 +284,17 @@ const createOwnerFnFor = (
                         try {
                             const end: WxResult<WxEnd> =
                                 await globalEndCreator(onRecv);
+                            // close the connection when this window is closed
+                            if (end.val) {
+                                (
+                                    globalThis as unknown as WindowLike
+                                ).addEventListener("pagehide", () => {
+                                    end.val.close();
+                                });
+                                // for same origin linking, closing the end is enough
+                                // to notify the other side to trigger close listeners
+                                // and close the window
+                            }
                             if ("val" in end || "err" in end) {
                                 return end;
                             }
@@ -330,26 +342,44 @@ const createOwnerFnFor = (
                 return controller;
             }
 
-            const { start, isClosed } = controller.val;
+            const { start, close, isClosed, onClose } = controller.val;
+
+            // close the connection when this window is closed
+            (globalThis as unknown as WindowLike).addEventListener(
+                "pagehide",
+                () => {
+                    close();
+                },
+            );
+            // when connection is closed, send close message to the other end
+            void onClose(() => {
+                ownerWindow.postMessage(
+                    {
+                        s: wxInternalProtocol,
+                        p: wxInternalProtocol,
+                        m: 1,
+                        f: wxFuncClose,
+                        d: "close",
+                    },
+                    ownerOrigin,
+                );
+            });
+
             await start();
 
-            const end = wxMakeEnd(
-                (message) => ownerWindow.postMessage(message, ownerOrigin),
-                () => {
-                    // try let the other side close us
-                    ownerWindow.postMessage(
-                        {
-                            s: wxInternalProtocol,
-                            p: wxInternalProtocol,
-                            m: 1,
-                            f: wxFuncClose,
-                            d: "close",
-                        },
-                        ownerOrigin,
-                    );
+            const end: WxEnd = {
+                send: (message) => {
+                    if (isClosed()) {
+                        return { err: { code: "Closed" } };
+                    }
+                    ownerWindow.postMessage(message, ownerOrigin);
+                    return {};
                 },
+                close,
+                onClose,
                 isClosed,
-            );
+            };
+
             return { val: end };
         },
     });
@@ -361,7 +391,6 @@ const linkToTargetWindow = (
     targetWindow: WindowLike,
     targetOrigin: string,
     onRecv: WxEndRecvFn,
-    close: () => void,
     options?: WxEndOptions,
 ): Promise<WxResult<WxEnd>> => {
     // setting the global end creator for same-origin same-context linking
@@ -375,11 +404,6 @@ const linkToTargetWindow = (
                     onRecvB: WxEndRecvFn,
                 ) => {
                     const [endA, endB] = wxMakeChannel(onRecv, onRecvB);
-                    const originalClose = endA.close;
-                    endA.close = () => {
-                        originalClose();
-                        close();
-                    };
                     resolve({ val: endA });
                     return { val: endB };
                 };
@@ -399,7 +423,6 @@ const linkToTargetWindow = (
         targetWindow,
         targetOrigin,
         onRecv,
-        close,
         options,
     );
 };
@@ -408,7 +431,6 @@ const linkToTargetWindowCrossOrigin = async (
     targetWindow: WindowLike,
     targetOrigin: string,
     onRecv: WxEndRecvFn,
-    closeWindow: () => void,
     options?: WxEndOptions,
 ): Promise<WxResult<WxEnd>> => {
     const controller = wxMakeMessageController(
@@ -438,17 +460,21 @@ const linkToTargetWindowCrossOrigin = async (
         return controller;
     }
 
-    const { start, close: closeController, isClosed } = controller.val;
+    const { start, close, isClosed, onClose } = controller.val;
     await start();
 
-    const end = wxMakeEnd(
-        (mesasge) => targetWindow.postMessage(mesasge, targetOrigin),
-        () => {
-            closeController();
-            closeWindow();
+    const end: WxEnd = {
+        send: (message) => {
+            if (isClosed()) {
+                return { err: { code: "Closed" } };
+            }
+            targetWindow.postMessage(message, targetOrigin);
+            return {};
         },
+        close,
+        onClose,
         isClosed,
-    );
+    };
 
     return { val: end };
 };

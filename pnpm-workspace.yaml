@@ -1,7 +1,6 @@
 packages:
   - packages/sdk
   - packages/mono-dev
-  - packages/example-vite
   - packages/example-multiwindow
   - packages/example-tutorial
 onlyBuiltDependencies:
