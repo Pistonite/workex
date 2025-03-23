@@ -13,6 +13,10 @@ includes:
     taskfile: ./packages/example-tutorial
     dir: ./packages/example-tutorial
 
+  ex-multiwindow:
+    taskfile: ./packages/example-multiwindow
+    dir: ./packages/example-multiwindow
+
   sdk:
     taskfile: ./packages/sdk
     dir: ./packages/sdk
@@ -47,10 +51,12 @@ tasks:
     cmds:
       - task: cli:check
       - task: sdk:check
+      - task: ex-multiwindow:generate
+      - task: ex-multiwindow:check
 
   test:
     cmds:
-      - task: example-tutorial:run
+      - task: ex-tutorial:run
 
   typedoc:
     cmds:

@@ -7,17 +7,23 @@ includes:
 
 tasks:
   build:
+    deps: [generate]
     cmds:
-      - cargo run --bin workex -- -p multiwindow -l SideA,SideB src/proto.ts
       - bun build src/main.ts > dist/index.js
 
   serve:
+    deps: [build]
     cmds:
       - bun run server.ts
 
   install:
     cmds:
+      - task: generate
       - task: ecma:mono-config
+
+  generate:
+    cmds:
+      - cargo run --bin workex -- -p multiwindow -l SideA,SideB src/proto.ts
 
   check:
     cmds:
