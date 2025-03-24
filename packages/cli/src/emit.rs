@@ -197,7 +197,7 @@ fn emit_interface_bus(
             // sender signature
             format!("export function {function_name}(resolve?: (_: {name}) => (void | Promise<void>)): WxProtocolBindConfig<{name}>;"),
             cblock! {
-                format!("export function {function_name}(handlerOrResolve: {name} | ((_: {name}) => (void | Promise<void>))): WxProtocolBindConfig<Record<string, never>> | WxProtocolBindConfig<{name} => {{"), [
+                format!("export function {function_name}(handlerOrResolve?: {name} | ((_: {name}) => (void | Promise<void>))): WxProtocolBindConfig<Record<string, never>> | WxProtocolBindConfig<{name}> {{"), [
                     cblock!{
                         "if (!handlerOrResolve || typeof handlerOrResolve === \"function\") { return {", [
                             format!("protocol: {},", quoted(protocol)),
@@ -228,23 +228,26 @@ fn emit_interface_bus(
     let output = cconcat![
         header(),
         "import type { WxProtocolBindConfig } from \"@pistonite/workex\";",
+        format!(
+            "import type {{ {} }} from \"../{}\";",
+            interface.name, interface.filename
+        ),
         match linked_interface {
             Some(linked) => cconcat![
                 format!(
-                    "import type {{ {} }} from \"../{}\";",
-                    interface.name, interface.filename
+                    "import type {{ {0} }} from \"../{1}\";\nimport {{ _wxRecverImpl }} from \"./{0}.ts\";",
+                    linked.name, linked.filename
                 ),
                 format!(
-                    "import type {{ {0} }} from \"../{1}\";\nimport {{ _wxSenderImpl, _wxRecverImpl }} from \"./{0}.ts\";",
-                    linked.name, linked.filename
-                )
+                    "import {{ _wxSenderImpl }} from \"./{}.ts\";",
+                    interface.name
+                ),
             ],
-            None => cconcat![],
+            None => cconcat![[format!(
+                "import {{ _wxSenderImpl, _wxRecverImpl }} from \"./{}.ts\";",
+                interface.name
+            )]],
         },
-        format!(
-            "import {{ _wxSenderImpl }} from \"./{}.ts\";",
-            interface.name
-        ),
         "",
         bind_config_func
     ];
