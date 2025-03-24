@@ -3,6 +3,3 @@ packages:
   - packages/mono-dev
   - packages/example-multiwindow
   - packages/example-tutorial
-onlyBuiltDependencies:
-  - '@swc/core'
-  - esbuild
