@@ -95,13 +95,14 @@ fn emit_interface_impl(
     let recver_decl = cblock! {
         format!("export const _wxRecverImpl = (handler: {}): {} => {{", interface.name, ident_wxhandler), [
         cblock! {
-            "return (fId, args: any[]) => { switch (fId) {", [
+            "return ((fId, args: any[]) => { switch (fId) {", [
             cconcat!(interface.functions.iter().map(|f| {
                 let func_ident = format!("{}_{}", interface.name, f.name);
                 let funcid_expr = format!("{} /* {}.{} */", func_map.get(&func_ident).unwrap(), interface.name, f.name);
                 f.to_recv_switch_case(&funcid_expr)
             })) ],
-            "} return Promise.resolve({ err: { code: \"UnknownFunction\" } }); }"
+            // adding the cast to avoid TypeScript shenanigans
+            format!("}} return Promise.resolve({{ err: {{ code: \"UnknownFunction\" }} }}); }}) as {};", ident_wxhandler)
         }, ],
         "};"
     };
