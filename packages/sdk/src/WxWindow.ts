@@ -303,9 +303,6 @@ const createOwnerFnFor = (
                         }
                     }
                 }
-                console.warn(
-                    "[workex] same-origin same-context linking failed, falling back to postMessage",
-                );
                 return {
                     err: wxFail("Same-origin same-context linking failed"),
                 };
