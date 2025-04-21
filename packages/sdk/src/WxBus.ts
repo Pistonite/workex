@@ -69,11 +69,9 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
     isActiveSide: boolean,
     endCreator: (onRecv: WxEndRecvFn) => Promise<WxResult<WxEnd>>,
     config: TConfig,
-    timeout?: number,
+    timeout_?: number,
 ): Promise<WxResult<WxCreateBusOutput<TConfig>>> => {
-    if (!timeout || timeout < 0) {
-        timeout = 60000;
-    }
+    const timeout = !timeout_ || timeout_ < 0 ? 60000 : timeout_;
     // extract configuration
     const protocols = new Set<string>();
     const protocolQuery: string[] = [];
@@ -203,7 +201,6 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
                 );
                 return;
             }
-            pendingMessages.delete(m);
             if (f === wxFuncReturn) {
                 pending({ val: d });
             } else {
@@ -423,12 +420,12 @@ class WxBusSender {
         });
         const timeoutPromise = new Promise<WxResult<unknown>>((resolve) => {
             setTimeout(() => {
-                this.pendingMessages.delete(mId);
                 resolve({ err: { code: "Timeout" } });
             }, this.timeout);
         });
 
         const result = await Promise.race([responsePromise, timeoutPromise]);
+        this.pendingMessages.delete(mId);
         return result as Awaited<WxPromise<TReturn>>;
     }
 

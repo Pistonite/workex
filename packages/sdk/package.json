@@ -1,6 +1,6 @@
 {
     "name": "@pistonite/workex",
-    "version": "0.0.8",
+    "version": "0.1.0",
     "description": "TypeScript SDK for Workex - The in-house messaging bindgen library for my projects",
     "homepage": "https://github.com/Pistonite/workex",
     "bugs": {
@@ -23,7 +23,7 @@
         "directory": "packages/sdk"
     },
     "dependencies": {
-        "@pistonite/pure": "^0.24.2"
+        "@pistonite/pure": "^0.26.0"
     },
     "devDependencies": {
         "mono-dev": "workspace:*"

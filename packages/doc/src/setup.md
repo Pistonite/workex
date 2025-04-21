@@ -1,10 +1,5 @@
 # Setup
 
-```admonish danger
-Version `0.0.6` is a complete rewrite to expand the support from Workers to Windows,
-and enhanced the experience of multiple protocols running on the same channel.
-```
-
 Workex is a solution to RPC in the JS world. You define interfaces in
 TypeScript, and Workex generates code so that calling a remote
 context uses the same interface you define.
@@ -42,5 +37,6 @@ The [tutorials](./tutorial/index.md) shows basic examples for using the SDK.
 You can also refer to the [SDK reference](./reference/index.md) when needed.
 
 Note that:
-- The SDK version and workex version should match exactly
+- The SDK version and CLI version should have the same minor version (the major version will always be `0`)
+  - i.e. `0.1.1` and `0.1.0` are compatible with each other, but not `0.1.1` and `0.2.0`
 - The SDK is TypeScript-only, so a bundler is needed to consume it.

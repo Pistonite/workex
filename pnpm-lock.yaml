@@ -92,8 +92,8 @@ importers:
   packages/sdk:
     dependencies:
       '@pistonite/pure':
-        specifier: ^0.24.2
-        version: 0.24.2
+        specifier: ^0.26.0
+        version: 0.26.0
     devDependencies:
       mono-dev:
         specifier: workspace:*
@@ -430,8 +430,8 @@ packages:
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
 
-  '@pistonite/pure@0.24.2':
-    resolution: {integrity: sha512-aZ+cEjZwo8FBBJwQlpJEUSZ2YI+3rZMVFybsNS50evcpN+xnPEd5ZG1srhWG3078SP+TNk49Zn0MTIiRaWJAbg==}
+  '@pistonite/pure@0.26.0':
+    resolution: {integrity: sha512-VXvKmw1w23JndOBlrot7WSJE0RV2hDZhdwp4bgyLmmJOKm8l2RSqij70I/kYlIU5mokG54SWfFy84xZdkW7cTw==}
 
   '@prettier/cli@0.7.1':
     resolution: {integrity: sha512-YoXPLOLmEEHP4MKgzcEilzaUtlo80Qm5Pb+59QbgDeOsIExGBkRqZmC2+iwzSwEhlhTEpGqDwqb3+nP/dPay9A==}
@@ -571,9 +571,6 @@ packages:
 
   '@types/bun@1.2.9':
     resolution: {integrity: sha512-epShhLGQYc4Bv/aceHbmBhOz1XgUnuTZgcxjxk+WXwNyDXavv5QHD1QEFV0FwbTSQtNq6g4ZcV6y0vZakTjswg==}
-
-  '@types/estree@1.0.6':
-    resolution: {integrity: sha512-AYnb1nQyY49te+VRAVgmzfcgjYS91mY5P0TKUDCLEM+gNnA+3T6rWITXRLYCpahpqSQbN5cE+gHpnPyXjHWxcw==}
 
   '@types/estree@1.0.7':
     resolution: {integrity: sha512-w28IoSUCJpidD/TGviZwwMJckNESJZXFu7NBZ5YJ4mEUnNraUn9Pm8HSZm/jDF1pDWYKspWE7oVphigUPRakIQ==}
@@ -2396,7 +2393,7 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
 
-  '@pistonite/pure@0.24.2':
+  '@pistonite/pure@0.26.0':
     dependencies:
       denque: 2.1.0
 
@@ -2430,7 +2427,7 @@ snapshots:
 
   '@rollup/pluginutils@5.1.0(rollup@4.40.0)':
     dependencies:
-      '@types/estree': 1.0.6
+      '@types/estree': 1.0.7
       estree-walker: 2.0.2
       picomatch: 2.3.1
     optionalDependencies:
@@ -2532,8 +2529,6 @@ snapshots:
   '@types/bun@1.2.9':
     dependencies:
       bun-types: 1.2.9
-
-  '@types/estree@1.0.6': {}
 
   '@types/estree@1.0.7': {}
 
@@ -3126,7 +3121,7 @@ snapshots:
       '@humanfs/node': 0.16.6
       '@humanwhocodes/module-importer': 1.0.1
       '@humanwhocodes/retry': 0.4.2
-      '@types/estree': 1.0.6
+      '@types/estree': 1.0.7
       '@types/json-schema': 7.0.15
       ajv: 6.12.6
       chalk: 4.1.2

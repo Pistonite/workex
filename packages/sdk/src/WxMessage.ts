@@ -144,15 +144,13 @@ export type AddMessageEventListenerFn = (
 export const wxMakeMessageController = (
     /** If the side is the active side */
     isActiveSide: boolean,
-    timeout: number | undefined | null,
+    timeout_: number | undefined | null,
     onRecv: WxEndRecvFn,
     addMessageEventListener: AddMessageEventListenerFn,
     postMessage: (message: WxMessage) => void,
 ): WxResult<WxMessageController> => {
     // default timeout
-    if (!timeout || timeout <= 0) {
-        timeout = 60000;
-    }
+    const timeout = !timeout_ || timeout_ <= 0 ? 60000 : timeout_;
 
     const { close, isClosed, onClose } = wxMakeCloseController();
 
@@ -329,7 +327,6 @@ export const wxMakeMessageController = (
             handshakePromise,
             new Promise<WxVoid>((resolve) => {
                 setTimeout(() => {
-                    close();
                     resolve({
                         err: {
                             code: "Timeout",
