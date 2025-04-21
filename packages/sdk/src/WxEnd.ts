@@ -246,29 +246,3 @@ export const wxMakeChannel = (
         { send: sendFromB, close, onClose, isClosed },
     ];
 };
-
-// export const wxMakeEnd = (
-//     send: (message: WxMessage) => void,
-//     isClosed: () => boolean,
-// ): WxEnd => {
-//     return {
-//         send: (message) => {
-//             if (isClosed()) {
-//                 return { err: { code: "Closed" } };
-//             }
-//             send(message);
-//             return {};
-//         },
-//         close: () => {
-//             // ensure we only close once
-//             if (endClosed) {
-//                 return;
-//             }
-//             endClosed = true;
-//             notifyClose();
-//             // close the underlying channel
-//             close();
-//         },
-//         onClose,
-//     };
-// };
