@@ -2,66 +2,72 @@ name: CI
 on:
   push:
     branches:
-    - main
+      - main
   pull_request:
     branches:
-    - main
+      - main
 
 jobs:
   build:
-    name: build
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - image: ubuntu-latest
+            target: x64
+          - image: ubuntu-24.04-arm
+            target: arm64
+          - image: macos-latest
+            target: x64
+          - image: macos-latest
+            target: arm64
+          - image: windows-latest
+            target: x64
+          - image: windows-11-arm
+            target: arm64
+    runs-on: ${{ matrix.image }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: Pistonight/mono-dev/actions/setup@main
         with:
-          persist-credentials: false
-          submodules: true
-      - uses: dtolnay/rust-toolchain@stable
+          rust: stable
+          rust-native: ${{ matrix.target }}
+      - uses: Pistonight/mono-dev/actions/rust-xplat@main
         with:
-          targets: ${{ inputs.rust_targets }}
-      - uses: Swatinem/rust-cache@v2 # useblacksmith/rust-cache@v3
-      - run: cargo build --release
+          arch: ${{ matrix.target }}
+          binary: workex
 
   check:
-    name: check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: Pistonight/mono-dev/actions/setup@main
         with:
-          persist-credentials: false
           submodules: true
-      - uses: ./.github/steps/setup
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          rust: stable
+          ecma-pnpm: true
       - run: task install-ci
       - run: task check
 
   test:
-    name: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: Pistonight/mono-dev/actions/setup@main
         with:
-          persist-credentials: false
           submodules: true
-      - uses: ./.github/steps/setup
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          rust: stable
+          ecma-pnpm: true
       - run: task install-ci
       - run: task test
 
   docs:
-    name: docs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: Pistonight/mono-dev/actions/setup@main
         with:
-          persist-credentials: false
           submodules: true
-      - uses: ./.github/steps/setup
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: ./.github/steps/setup-mdbook
+          rust: stable
+          ecma-pnpm: true
+          tool-mdbook: true
+          tool-cargo-install: txtpp
       - run: task install-ci
       - run: task build-doc
       - uses: actions/upload-pages-artifact@v3

@@ -189,7 +189,7 @@ export const wxMakeMessageController = (
                 }
             }
             // route the message to the bus handler
-            onRecv(event.data);
+            void onRecv(event.data);
         }, eventHandlerController.signal);
     } catch (e) {
         close();
