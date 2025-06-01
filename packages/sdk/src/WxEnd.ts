@@ -221,7 +221,7 @@ export const wxMakeChannel = (
                 close();
                 return;
             }
-            onRecvB(message);
+            void onRecvB(message);
         }, 0);
         return {};
     };
@@ -237,7 +237,7 @@ export const wxMakeChannel = (
                 close();
                 return;
             }
-            onRecvA(message);
+            void onRecvA(message);
         }, 0);
         return {};
     };
