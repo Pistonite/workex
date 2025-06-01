@@ -22,6 +22,14 @@ To get started, install the CLI tool with
 ```
 cargo install --git https://github.com/Pistonite/workex
 ```
+
+```admonish tip
+`cargo-binstall` is also supported to directly install pre-built binaries.
+
+    cargo install cargo-binstall
+    cargo binstall workex --git https://github.com/Pistonite/workex
+
+```
 After installing, you can run `workex --help` to see the available options.
 See the [tutorials](./tutorial/index.md) for a full end-to-end walk-through
 of running some basic RPC stuff.
