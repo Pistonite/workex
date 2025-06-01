@@ -13,5 +13,6 @@ jobs:
         with:
           artifacts-workflow: build.yml
           artifacts-path: release
+          pack: workex-*
           minisign-key: ${{ secrets.MINISIGN_KEY }}
 
