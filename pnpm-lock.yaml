@@ -50,7 +50,7 @@ importers:
         version: 9.28.0
       '@modyfi/vite-plugin-yaml':
         specifier: ^1.1.1
-        version: 1.1.1(rollup@4.41.1)(vite@6.3.1(@types/node@22.13.13)(yaml@2.7.0))
+        version: 1.1.1(rollup@4.41.1)(vite@6.3.5(@types/node@22.13.13)(yaml@2.7.0))
       '@prettier/cli':
         specifier: ^0.7.6
         version: 0.7.6(prettier@3.4.2)
@@ -59,7 +59,7 @@ importers:
         version: 7.0.0-dev.20250530.1
       '@vitejs/plugin-react':
         specifier: ^4.4.0
-        version: 4.5.0(vite@6.3.1(@types/node@22.13.13)(yaml@2.7.0))
+        version: 4.5.0(vite@6.3.5(@types/node@22.13.13)(yaml@2.7.0))
       eslint:
         specifier: ^9.27.0
         version: 9.28.0
@@ -86,10 +86,10 @@ importers:
         version: 8.33.0(eslint@9.28.0)(typescript@5.8.3)
       vite-plugin-wasm:
         specifier: ^3.4.1
-        version: 3.4.1(vite@6.3.1(@types/node@22.13.13)(yaml@2.7.0))
+        version: 3.4.1(vite@6.3.5(@types/node@22.13.13)(yaml@2.7.0))
       vite-tsconfig-paths:
         specifier: ^5.1.4
-        version: 5.1.4(typescript@5.8.3)(vite@6.3.1(@types/node@22.13.13)(yaml@2.7.0))
+        version: 5.1.4(typescript@5.8.3)(vite@6.3.5(@types/node@22.13.13)(yaml@2.7.0))
     devDependencies:
       '@types/bun':
         specifier: ^1.2.13
@@ -339,12 +339,6 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
-
-  '@eslint-community/eslint-utils@4.5.1':
-    resolution: {integrity: sha512-soEIOALTfTK6EjmKMMoLugwaP0rzkad90iIWd1hMO9ARkSAyjfMfkRRhLvD5qH7vvM0Cg72pieUfR6yh6XxC4w==}
-    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
-    peerDependencies:
-      eslint: ^6.0.0 || ^7.0.0 || >=8.0.0
 
   '@eslint-community/eslint-utils@4.7.0':
     resolution: {integrity: sha512-dyybb3AcajC7uha6CvhdVRJqaKyn7w2YKqKyAN37NKYgZT36w+iRb0Dymmc5qEJ549c/S31cMMSFd75bteCpCw==}
@@ -1235,9 +1229,6 @@ packages:
   grammex@3.1.10:
     resolution: {integrity: sha512-UCfMsV/sfqk4TN1+m5ehSOXuADyLUgSuwMI2vCVlbN/REoSmTl4eagswC9DzzVxtsKv7Yp2CmIJNn4fMk8PaQA==}
 
-  grammex@3.1.3:
-    resolution: {integrity: sha512-rUZoJJQguOCaAMTuoyxs40OxqSLgVhzCCwDn1mbp2vETWutv/TmgAz7KxMR8Tz4z4cty/zIh88HrOWKqWgeGjg==}
-
   graphemer@1.4.0:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
 
@@ -2064,8 +2055,8 @@ packages:
       vite:
         optional: true
 
-  vite@6.3.1:
-    resolution: {integrity: sha512-kkzzkqtMESYklo96HKKPE5KKLkC1amlsqt+RjFMlX2AvbRB/0wghap19NdBxxwGZ+h/C6DLCrcEphPIItlGrRQ==}
+  vite@6.3.5:
+    resolution: {integrity: sha512-cZn6NDFE7wdTpINgs++ZJ4N49W2vRp8LCKrn3Ob1kYNtOo21vfDoaV5GzBfLU4MovSAB8uNRm4jgzVQZ+mBzPQ==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
     peerDependencies:
@@ -2368,11 +2359,6 @@ snapshots:
   '@esbuild/win32-x64@0.25.5':
     optional: true
 
-  '@eslint-community/eslint-utils@4.5.1(eslint@9.28.0)':
-    dependencies:
-      eslint: 9.28.0
-      eslint-visitor-keys: 3.4.3
-
   '@eslint-community/eslint-utils@4.7.0(eslint@9.28.0)':
     dependencies:
       eslint: 9.28.0
@@ -2453,12 +2439,12 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@modyfi/vite-plugin-yaml@1.1.1(rollup@4.41.1)(vite@6.3.1(@types/node@22.13.13)(yaml@2.7.0))':
+  '@modyfi/vite-plugin-yaml@1.1.1(rollup@4.41.1)(vite@6.3.5(@types/node@22.13.13)(yaml@2.7.0))':
     dependencies:
       '@rollup/pluginutils': 5.1.0(rollup@4.41.1)
       js-yaml: 4.1.0
       tosource: 2.0.0-alpha.3
-      vite: 6.3.1(@types/node@22.13.13)(yaml@2.7.0)
+      vite: 6.3.5(@types/node@22.13.13)(yaml@2.7.0)
     transitivePeerDependencies:
       - rollup
 
@@ -2750,7 +2736,7 @@ snapshots:
       '@typescript/native-preview-win32-arm64': 7.0.0-dev.20250530.1
       '@typescript/native-preview-win32-x64': 7.0.0-dev.20250530.1
 
-  '@vitejs/plugin-react@4.5.0(vite@6.3.1(@types/node@22.13.13)(yaml@2.7.0))':
+  '@vitejs/plugin-react@4.5.0(vite@6.3.5(@types/node@22.13.13)(yaml@2.7.0))':
     dependencies:
       '@babel/core': 7.26.10
       '@babel/plugin-transform-react-jsx-self': 7.25.9(@babel/core@7.26.10)
@@ -2758,7 +2744,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.9
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 6.3.1(@types/node@22.13.13)(yaml@2.7.0)
+      vite: 6.3.5(@types/node@22.13.13)(yaml@2.7.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -3235,7 +3221,7 @@ snapshots:
 
   eslint@9.28.0:
     dependencies:
-      '@eslint-community/eslint-utils': 4.5.1(eslint@9.28.0)
+      '@eslint-community/eslint-utils': 4.7.0(eslint@9.28.0)
       '@eslint-community/regexpp': 4.12.1
       '@eslint/config-array': 0.20.0
       '@eslint/config-helpers': 0.2.2
@@ -3317,7 +3303,7 @@ snapshots:
 
   fast-ignore@1.1.3:
     dependencies:
-      grammex: 3.1.3
+      grammex: 3.1.10
       string-escape-regex: 1.0.1
 
   fast-json-stable-stringify@2.1.0: {}
@@ -3442,8 +3428,6 @@ snapshots:
   gopd@1.2.0: {}
 
   grammex@3.1.10: {}
-
-  grammex@3.1.3: {}
 
   graphemer@1.4.0: {}
 
@@ -4329,22 +4313,22 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vite-plugin-wasm@3.4.1(vite@6.3.1(@types/node@22.13.13)(yaml@2.7.0)):
+  vite-plugin-wasm@3.4.1(vite@6.3.5(@types/node@22.13.13)(yaml@2.7.0)):
     dependencies:
-      vite: 6.3.1(@types/node@22.13.13)(yaml@2.7.0)
+      vite: 6.3.5(@types/node@22.13.13)(yaml@2.7.0)
 
-  vite-tsconfig-paths@5.1.4(typescript@5.8.3)(vite@6.3.1(@types/node@22.13.13)(yaml@2.7.0)):
+  vite-tsconfig-paths@5.1.4(typescript@5.8.3)(vite@6.3.5(@types/node@22.13.13)(yaml@2.7.0)):
     dependencies:
       debug: 4.4.0
       globrex: 0.1.2
       tsconfck: 3.1.5(typescript@5.8.3)
     optionalDependencies:
-      vite: 6.3.1(@types/node@22.13.13)(yaml@2.7.0)
+      vite: 6.3.5(@types/node@22.13.13)(yaml@2.7.0)
     transitivePeerDependencies:
       - supports-color
       - typescript
 
-  vite@6.3.1(@types/node@22.13.13)(yaml@2.7.0):
+  vite@6.3.5(@types/node@22.13.13)(yaml@2.7.0):
     dependencies:
       esbuild: 0.25.5
       fdir: 6.4.5(picomatch@4.0.2)
@@ -4438,7 +4422,7 @@ snapshots:
 
   zeptomatch@1.2.2:
     dependencies:
-      grammex: 3.1.3
+      grammex: 3.1.10
 
   zeptomatch@2.0.1:
     dependencies:
