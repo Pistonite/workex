@@ -33,3 +33,5 @@ export {
 
 export type { WindowLike, IFrameLike } from "./WxWindow.ts";
 export { wxWindow } from "./WxWindow.ts";
+
+export { log } from "./wx_log.ts";

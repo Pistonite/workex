@@ -2,6 +2,7 @@ import { errstr } from "@pistonite/pure/result";
 
 import type { WxEndRecvFn } from "./WxEnd.ts";
 import type { WxResult, WxVoid } from "./WxError.ts";
+import { log } from "./wx_log.ts";
 
 /**
  * Payload sendable to a {@link WxEnd}
@@ -193,7 +194,7 @@ export const wxMakeMessageController = (
         }, eventHandlerController.signal);
     } catch (e) {
         close();
-        console.error(e);
+        log.error(e);
         return {
             err: {
                 code: "AddEventListenerFail",
@@ -228,13 +229,11 @@ export const wxMakeMessageController = (
                                 resolve({});
                                 return;
                             }
-                            console.warn(
-                                `[workex] unknown handshake message with mID ${m}`,
-                            );
+                            log.warn(`unknown handshake message with mID ${m}`);
                         }
                     }, handshakeController.signal);
                 } catch (e) {
-                    console.error(e);
+                    log.error(e);
                     return {
                         err: {
                             code: "AddEventListenerFail",
@@ -287,13 +286,11 @@ export const wxMakeMessageController = (
                                 resolve({});
                                 return;
                             }
-                            console.warn(
-                                `[workex] unknown handshake message with mID ${m}`,
-                            );
+                            log.warn(`unknown handshake message with mID ${m}`);
                         }
                     }, handshakeController.signal);
                 } catch (e) {
-                    console.error(e);
+                    log.error(e);
                     return {
                         err: {
                             code: "AddEventListenerFail",
@@ -309,19 +306,13 @@ export const wxMakeMessageController = (
     const start = async () => {
         const handshakePromise = executeHandshake();
         const notice1 = setTimeout(() => {
-            console.warn(
-                "[workex] connection has not been established after 1 second!",
-            );
+            log.warn("connection has not been established after 1 second!");
         }, 1000);
         const notice2 = setTimeout(() => {
-            console.warn(
-                "[workex] connection has not been established after 5 seconds!",
-            );
+            log.warn("connection has not been established after 5 seconds!");
         }, 5000);
         const notice3 = setTimeout(() => {
-            console.warn(
-                "[workex] connection has not been established after 10 seconds! (this is the last warning)",
-            );
+            log.warn("connection has not been established after 10 seconds! (this is the last warning)");
         }, 10000);
         const result = await Promise.race([
             handshakePromise,

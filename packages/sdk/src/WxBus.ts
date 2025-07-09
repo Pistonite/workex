@@ -14,6 +14,7 @@ import {
     type WxPayload,
 } from "./WxMessage.ts";
 import { wxMakePromise } from "./WxUtil.ts";
+import { log } from "./wx_log.ts";
 
 /**
  * Base type shape for the config object passed into the bus creation function.
@@ -159,9 +160,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
                 });
                 return;
             }
-            console.warn(
-                `[workex] bus received unknown workex internal message: ${f}`,
-            );
+            log.warn(`bus received unknown workex internal message: ${f}`);
             return;
         }
 
@@ -185,9 +184,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
                 }
             } else {
                 // unknown protocol from response message, log and ignore
-                console.warn(
-                    `[workex] bus received unknown protocol for a response message: ${p}`,
-                );
+                log.warn(`bus received unknown protocol for a response message: ${p}`);
             }
             return;
         }
@@ -196,9 +193,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
         if (f === wxFuncReturn || f === wxFuncReturnError) {
             const pending = pendingMessages.get(m);
             if (!pending) {
-                console.warn(
-                    `[workex] bus received response for unknown message id: ${m}`,
-                );
+                log.warn(`bus received response for unknown message id: ${m}`);
                 return;
             }
             if (f === wxFuncReturn) {
@@ -212,7 +207,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
         // other side sending a request
         let sendResult: WxResult<unknown>;
         if (!d || !Array.isArray(d)) {
-            console.warn(`[workex] bus received invalid data for a request`);
+            log.warn(`bus received invalid data for a request`);
             sendResult = end.send({
                 s: wxInternalProtocol,
                 p,
@@ -267,9 +262,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
         }
 
         if (sendResult.err?.code === "Closed") {
-            console.warn(
-                `[workex] bus failed to send response because the end is closed`,
-            );
+            log.warn(`bus failed to send response because the end is closed`);
             end.close();
             return;
         }
@@ -296,9 +289,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
             d: protocolQuery,
         });
         if (res.err) {
-            console.error(
-                `[workex] bus failed to query protocols, communication not established!`,
-            );
+            log.error(`bus failed to query protocols, communication not established!`);
             end.close();
             return res;
         }
@@ -315,9 +306,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
     removeProtocolSubscriber();
     if (protocolRes.err) {
         end.close();
-        console.error(
-            `[workex] bus failed to agree on protocols, communication not established!`,
-        );
+        log.error(`bus failed to agree on protocols, communication not established!`);
         return protocolRes;
     }
 
