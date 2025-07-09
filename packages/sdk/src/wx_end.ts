@@ -1,15 +1,15 @@
 import { once } from "@pistonite/pure/sync";
 
-import type { WxResult, WxVoid } from "./WxError.ts";
+import type { WxResult, WxVoid } from "./wx_error.ts";
 import {
-    type WxCloseController,
     wxFuncClose,
     wxInternalProtocol,
     wxMakeCloseController,
     wxMakeMessageController,
+    type WxCloseController,
     type WxMessage,
-    type WxPayload,
-} from "./WxMessage.ts";
+    type WxOnRecvFn,
+} from "./wx_message.ts";
 
 /**
  * Messaging primitive representing one end of an established messaging channel
@@ -26,8 +26,6 @@ export type WxEnd = WxCloseController & {
     /** Send a message to the other end */
     send: (message: WxMessage) => WxVoid;
 };
-
-export type WxEndRecvFn = (message: WxPayload) => void | Promise<void>;
 
 export type WxEndOptions = {
     /**
@@ -70,7 +68,7 @@ export type WorkerLike = {
  */
 export const wxMakeWorkerEnd = async (
     worker: WorkerLike,
-    onRecv: WxEndRecvFn,
+    onRecv: WxOnRecvFn,
     options?: WxEndOptions,
 ): Promise<WxResult<WxEnd>> => {
     // note that we are not handling worker.onerror and worker.onmessageerror.
@@ -129,7 +127,7 @@ export const wxMakeWorkerEnd = async (
  */
 export const wxMakeWorkerGlobalEnd = once({
     fn: async (
-        onRecv: WxEndRecvFn,
+        onRecv: WxOnRecvFn,
         option?: WxEndOptions,
     ): Promise<WxResult<WxEnd>> => {
         /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -203,8 +201,8 @@ export const wxMakeWorkerGlobalEnd = once({
  * will also not be received).
  */
 export const wxMakeChannel = (
-    onRecvA: WxEndRecvFn,
-    onRecvB: WxEndRecvFn,
+    onRecvA: WxOnRecvFn,
+    onRecvB: WxOnRecvFn,
 ): [WxEnd, WxEnd] => {
     const { close, isClosed, onClose } = wxMakeCloseController();
     // sending close message from either side is equivalent

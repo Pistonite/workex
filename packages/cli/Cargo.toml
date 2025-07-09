@@ -1,6 +1,6 @@
 [package]
 name = "workex"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 description = "In-house messaging bindgen library for workers/windows"
 repository = "https://github.com/Pistonite/workex"
@@ -12,13 +12,13 @@ exclude = [
 
 [dependencies]
 anyhow = "1.0.98"
-clap = { version = "4.5.39", features = ["derive"] }
+clap = { version = "4.5.40", features = ["derive"] }
 codize = "0.3.3"
 derive_more = { version = "2.0.1", features = ["deref", "deref_mut"] }
 dunce = "1.0.5"
-swc_common = { version = "11.0.0", features = ["tty-emitter"] }
-swc_core = { version = "26.3.1", features = ["ecma_ast"] }
-swc_ecma_parser = "14.0.1"
+swc_common = { version = "13.0.4", features = ["tty-emitter"] }
+swc_core = { version = "31.0.1", features = ["ecma_ast"] }
+swc_ecma_parser = "19.0.0"
 
 [package.metadata.binstall.signing]
 algorithm = "minisign"

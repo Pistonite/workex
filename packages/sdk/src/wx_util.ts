@@ -1,24 +1,14 @@
-import type { WxPromise } from "./WxError.ts";
+import { makePromise, type PromiseHandle } from "@pistonite/pure/sync";
+
+import type { WxPromise } from "./wx_error.ts";
 
 /** Wrapper for different parts of a single promise. See {@link wxMakePromise} */
-export type WxPromiseWrapper<T, E = unknown> = {
-    promise: Promise<T>;
-    resolve: (value: T) => void;
-    reject: (reason: E) => void;
-};
+export type WxPromiseWrapper<T> = PromiseHandle<T>;
 
 /**
  * Simple utility for making a promise and getting its resolve and reject functions.
  */
-export const wxMakePromise = <T, E = unknown>(): WxPromiseWrapper<T, E> => {
-    let resolve: (value: T) => void = () => {};
-    let reject: (reason: E) => void = () => {};
-    const promise = new Promise<T>((res, rej) => {
-        resolve = res;
-        reject = rej;
-    });
-    return { promise, resolve, reject };
-};
+export const wxMakePromise: <T>() => WxPromiseWrapper<T> = makePromise;
 
 /**
  * Wrap the return type `T` of a function as a `WxPromise<T>`.

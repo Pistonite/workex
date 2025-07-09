@@ -1,7 +1,7 @@
 import { errstr } from "@pistonite/pure/result";
 
-import type { WxEndRecvFn } from "./WxEnd.ts";
-import type { WxResult, WxVoid } from "./WxError.ts";
+import type { WxResult, WxVoid } from "./wx_error.ts";
+import { log } from "./wx_log.ts";
 
 /**
  * Payload sendable to a {@link WxEnd}
@@ -99,6 +99,7 @@ export const wxFuncProtocol = 4 as const;
  */
 export type WxMessage = WxPayload & { s: typeof wxInternalProtocol };
 
+/** Validate the received data is a valid workex message */
 export const isWxMessageEvent = (
     event: unknown,
 ): event is { data: WxPayload } => {
@@ -137,6 +138,9 @@ export type AddMessageEventListenerFn = (
     signal: unknown,
 ) => void;
 
+/** Function type for the onRecv handler on message controller/ends */
+export type WxOnRecvFn = (message: WxPayload) => void | Promise<void>;
+
 /**
  * Create a {@link WxMessageController} that handles the lowest
  * level of message passing using `MesasgeEvent`s
@@ -145,7 +149,7 @@ export const wxMakeMessageController = (
     /** If the side is the active side */
     isActiveSide: boolean,
     timeout_: number | undefined | null,
-    onRecv: WxEndRecvFn,
+    onRecv: WxOnRecvFn,
     addMessageEventListener: AddMessageEventListenerFn,
     postMessage: (message: WxMessage) => void,
 ): WxResult<WxMessageController> => {
@@ -193,7 +197,7 @@ export const wxMakeMessageController = (
         }, eventHandlerController.signal);
     } catch (e) {
         close();
-        console.error(e);
+        log.error(e);
         return {
             err: {
                 code: "AddEventListenerFail",
@@ -228,13 +232,11 @@ export const wxMakeMessageController = (
                                 resolve({});
                                 return;
                             }
-                            console.warn(
-                                `[workex] unknown handshake message with mID ${m}`,
-                            );
+                            log.warn(`unknown handshake message with mID ${m}`);
                         }
                     }, handshakeController.signal);
                 } catch (e) {
-                    console.error(e);
+                    log.error(e);
                     return {
                         err: {
                             code: "AddEventListenerFail",
@@ -287,13 +289,11 @@ export const wxMakeMessageController = (
                                 resolve({});
                                 return;
                             }
-                            console.warn(
-                                `[workex] unknown handshake message with mID ${m}`,
-                            );
+                            log.warn(`unknown handshake message with mID ${m}`);
                         }
                     }, handshakeController.signal);
                 } catch (e) {
-                    console.error(e);
+                    log.error(e);
                     return {
                         err: {
                             code: "AddEventListenerFail",
@@ -309,18 +309,14 @@ export const wxMakeMessageController = (
     const start = async () => {
         const handshakePromise = executeHandshake();
         const notice1 = setTimeout(() => {
-            console.warn(
-                "[workex] connection has not been established after 1 second!",
-            );
+            log.warn("connection has not been established after 1 second!");
         }, 1000);
         const notice2 = setTimeout(() => {
-            console.warn(
-                "[workex] connection has not been established after 5 seconds!",
-            );
+            log.warn("connection has not been established after 5 seconds!");
         }, 5000);
         const notice3 = setTimeout(() => {
-            console.warn(
-                "[workex] connection has not been established after 10 seconds! (this is the last warning)",
+            log.warn(
+                "connection has not been established after 10 seconds! (this is the last warning)",
             );
         }, 10000);
         const result = await Promise.race([

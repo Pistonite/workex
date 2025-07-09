@@ -2,18 +2,19 @@ import {
     type WxBusCreator,
     wxCreateBus,
     type WxProtocolConfig,
-} from "./WxBus.ts";
+} from "./wx_bus.ts";
 import {
     type WorkerLike,
     wxMakeWorkerEnd,
     wxMakeWorkerGlobalEnd,
-} from "./WxEnd.ts";
+} from "./wx_end.ts";
+import { log } from "./wx_log.ts";
 import {
     type IFrameLike,
     type WxFrameLinkOptions,
     wxWindow,
     type WxWindowOpenOptions,
-} from "./WxWindow.ts";
+} from "./wx_window.ts";
 
 /**
  * Options to create Worker connections, using {@link wxWorker} or {@link wxWorkerGlobal}.
@@ -32,6 +33,7 @@ export const wxWorker = (
     options?: WxWorkerCreateOptions,
 ): WxBusCreator => {
     return <TConfig extends WxProtocolConfig>(config: TConfig) => {
+        log.info("creating connection to worker");
         return wxCreateBus(
             false /* passive side */,
             (onRecv) => {
@@ -53,6 +55,7 @@ export const wxWorkerGlobal = (
     options?: WxWorkerCreateOptions,
 ): WxBusCreator => {
     return <TConfig extends WxProtocolConfig>(config: TConfig) => {
+        log.info("creating worker global connection");
         return wxCreateBus(
             true /* active side */,
             (onRecv) => {
@@ -78,6 +81,7 @@ export const wxPopup = (
     options?: WxWindowOpenOptions,
 ): WxBusCreator => {
     return <TConfig extends WxProtocolConfig>(config: TConfig) => {
+        log.info("creating connection to popup");
         return wxCreateBus(
             false /* passive side */,
             async (onRecv) => {
@@ -107,6 +111,7 @@ export const wxFrame = (
     options?: WxFrameLinkOptions,
 ): WxBusCreator => {
     return <TConfig extends WxProtocolConfig>(config: TConfig) => {
+        log.info("creating connection to frame");
         return wxCreateBus(
             false /* passive side */,
             async (onRecv) => {
@@ -134,6 +139,7 @@ export const wxWindowOwner = (
     options?: WxWorkerCreateOptions,
 ): WxBusCreator => {
     return <TConfig extends WxProtocolConfig>(config: TConfig) => {
+        log.info("creating window owner connection");
         return wxCreateBus(
             true /* active side */,
             async (onRecv) => {

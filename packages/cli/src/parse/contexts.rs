@@ -48,7 +48,7 @@ impl Context {
         let mut out = BTreeMap::new();
         for input in inputs {
             let file_ctx = FileContext::try_new(&mut self, input)
-                .context(format!("Failed to load file: {}", input))?;
+                .with_context(|| format!("Failed to load file: {input}"))?;
             file_ctx.parse(&mut out);
         }
 

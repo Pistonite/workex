@@ -4,21 +4,22 @@
  * Consumer should only import from "/", which re-exports all public APIs and types
  * See {@link public}
  */
-export { wxFail } from "./WxError.ts";
+export { wxFail } from "./wx_error.ts";
 
-export type { WxEnd, WxEndRecvFn, WxEndOptions, WorkerLike } from "./WxEnd.ts";
+export type { WxEnd, WxEndOptions, WorkerLike } from "./wx_end.ts";
 export {
     wxMakeWorkerEnd,
     wxMakeWorkerGlobalEnd,
     wxMakeChannel,
-} from "./WxEnd.ts";
+} from "./wx_end.ts";
 
 export type {
     WxPayload,
     WxMessage,
     WxMessageController,
+    WxOnRecvFn,
     AddMessageEventListenerFn,
-} from "./WxMessage.ts";
+} from "./wx_message.ts";
 export {
     wxInternalProtocol,
     wxFuncReturn,
@@ -29,7 +30,9 @@ export {
     wxFuncProtocol,
     isWxMessageEvent,
     wxMakeMessageController,
-} from "./WxMessage.ts";
+} from "./wx_message.ts";
 
-export type { WindowLike, IFrameLike } from "./WxWindow.ts";
-export { wxWindow } from "./WxWindow.ts";
+export type { WindowLike, IFrameLike } from "./wx_window.ts";
+export { wxWindow } from "./wx_window.ts";
+
+export { log } from "./wx_log.ts";
