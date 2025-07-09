@@ -11,11 +11,11 @@ export {
     wxPopup,
     wxFrame,
     wxWindowOwner,
-} from "./WxCreate.ts";
-export type { WxWorkerCreateOptions } from "./WxCreate.ts";
+} from "./wx_create.ts";
+export type { WxWorkerCreateOptions } from "./wx_create.ts";
 
 // types used in public APIs
-export type { WxCloseController } from "./WxMessage.ts";
+export type { WxCloseController } from "./wx_message.ts";
 export type {
     WxProtocolConfig,
     WxProtocolBindConfig,
@@ -24,14 +24,14 @@ export type {
     WxBusCreator,
     WxProtocolBoundSender,
     WxCreateBusOutput,
-} from "./WxBus.ts";
+} from "./wx_bus.ts";
 export type {
     WxFrameLinkOptions,
     WxWindowOpenOptions,
     WxWindow,
-} from "./WxWindow.ts";
+} from "./wx_window.ts";
 
-export type { WxEc, WxError, WxResult, WxVoid, WxPromise } from "./WxError.ts";
+export type { WxEc, WxError, WxResult, WxVoid, WxPromise } from "./wx_error.ts";
 
-export type { WxPromiseWrapper } from "./WxUtil.ts";
-export { wxMakePromise, wxWrapHandler } from "./WxUtil.ts";
+export type { WxPromiseWrapper } from "./wx_util.ts";
+export { wxMakePromise, wxWrapHandler } from "./wx_util.ts";

@@ -1,19 +1,16 @@
 import { once } from "@pistonite/pure/sync";
 import { errstr } from "@pistonite/pure/result";
 
-import {
-    wxMakeChannel,
-    type WxEnd,
-    type WxEndOptions,
-    type WxEndRecvFn,
-} from "./WxEnd.ts";
-import { wxFail, type WxResult } from "./WxError.ts";
+import { wxMakeChannel, type WxEnd, type WxEndOptions } from "./wx_end.ts";
+import { wxFail, type WxResult } from "./wx_error.ts";
 import {
     wxMakeMessageController,
     wxFuncClose,
     wxInternalProtocol,
     type WxMessage,
-} from "./WxMessage.ts";
+    type WxOnRecvFn,
+} from "./wx_message.ts";
+import { log } from "./wx_log.ts";
 
 /**
  * Things that looks like a `Window`
@@ -60,7 +57,7 @@ export type WxWindow = {
      */
     owner(
         ownerOrigin: string,
-        onRecv: WxEndRecvFn,
+        onRecv: WxOnRecvFn,
         options?: WxEndOptions,
     ): Promise<WxResult<WxEnd>>;
 
@@ -72,7 +69,7 @@ export type WxWindow = {
      */
     popup(
         url: string,
-        onRecv: WxEndRecvFn,
+        onRecv: WxOnRecvFn,
         options?: WxWindowOpenOptions,
     ): Promise<WxResult<WxEnd>>;
 
@@ -81,7 +78,7 @@ export type WxWindow = {
      */
     frame(
         iframe: IFrameLike,
-        onRecv: WxEndRecvFn,
+        onRecv: WxOnRecvFn,
         options?: WxFrameLinkOptions,
     ): Promise<WxResult<WxEnd>>;
 };
@@ -145,14 +142,14 @@ export const wxWindow = (): WxResult<WxWindow> => {
 
     const popup = async (
         url: string,
-        onRecv: WxEndRecvFn,
+        onRecv: WxOnRecvFn,
         options?: WxWindowOpenOptions,
     ): Promise<WxResult<WxEnd>> => {
         let targetOrigin: string;
         try {
             targetOrigin = new URL(url).origin;
         } catch (e) {
-            console.error(e);
+            log.error(e);
             return {
                 err: {
                     code: "InvalidUrl",
@@ -176,7 +173,7 @@ export const wxWindow = (): WxResult<WxWindow> => {
                 features,
             );
         } catch (e) {
-            console.error(e);
+            log.error(e);
             targetWindow = null;
         }
         if (!targetWindow) {
@@ -207,7 +204,7 @@ export const wxWindow = (): WxResult<WxWindow> => {
             try {
                 targetWindow?.close?.();
             } catch (e) {
-                console.error(e);
+                log.error(e);
             }
         });
 
@@ -216,14 +213,14 @@ export const wxWindow = (): WxResult<WxWindow> => {
 
     const frame = async (
         iframe: IFrameLike,
-        onRecv: WxEndRecvFn,
+        onRecv: WxOnRecvFn,
         options?: WxFrameLinkOptions,
     ): Promise<WxResult<WxEnd>> => {
         let targetOrigin: string;
         try {
             targetOrigin = new URL(iframe.src).origin;
         } catch (e) {
-            console.error(e);
+            log.error(e);
             return {
                 err: {
                     code: "InvalidUrl",
@@ -264,7 +261,7 @@ const createOwnerFnFor = (
     return once({
         fn: async (
             ownerOrigin: string,
-            onRecv: WxEndRecvFn,
+            onRecv: WxOnRecvFn,
             options?: WxEndOptions,
         ): Promise<WxResult<WxEnd>> => {
             // same origin, get the global end creator from the owner
@@ -299,7 +296,7 @@ const createOwnerFnFor = (
                                 return end;
                             }
                         } catch (e) {
-                            console.error(e);
+                            log.error(e);
                         }
                     }
                 }
@@ -387,7 +384,7 @@ const linkToTargetWindow = (
     selfOrigin: string,
     targetWindow: WindowLike,
     targetOrigin: string,
-    onRecv: WxEndRecvFn,
+    onRecv: WxOnRecvFn,
     options?: WxEndOptions,
 ): Promise<WxResult<WxEnd>> => {
     // setting the global end creator for same-origin same-context linking
@@ -398,7 +395,7 @@ const linkToTargetWindow = (
             try {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (targetWindow as any)[wxSameContextGlobalEndCreator] = (
-                    onRecvB: WxEndRecvFn,
+                    onRecvB: WxOnRecvFn,
                 ) => {
                     const [endA, endB] = wxMakeChannel(onRecv, onRecvB);
                     resolve({ val: endA });
@@ -406,7 +403,7 @@ const linkToTargetWindow = (
                 };
                 return;
             } catch (e) {
-                console.error(e);
+                log.error(e);
                 resolve({
                     err: wxFail(
                         "Failed to create same-context linking: " + errstr(e),
@@ -427,7 +424,7 @@ const linkToTargetWindow = (
 const linkToTargetWindowCrossOrigin = async (
     targetWindow: WindowLike,
     targetOrigin: string,
-    onRecv: WxEndRecvFn,
+    onRecv: WxOnRecvFn,
     options?: WxEndOptions,
 ): Promise<WxResult<WxEnd>> => {
     const controller = wxMakeMessageController(

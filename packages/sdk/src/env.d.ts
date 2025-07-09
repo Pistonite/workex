@@ -8,6 +8,8 @@
  */
 
 declare const console: {
+    info: (...x: unknown[]) => void;
+    debug: (...x: unknown[]) => void;
     error: (...x: unknown[]) => void;
     warn: (...x: unknown[]) => void;
 };

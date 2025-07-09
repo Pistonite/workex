@@ -3,17 +3,18 @@
  */
 import { errstr } from "@pistonite/pure/result";
 
-import type { WxEnd, WxEndRecvFn } from "./WxEnd.ts";
-import type { WxError, WxPromise, WxResult, WxVoid } from "./WxError.ts";
+import type { WxEnd } from "./wx_end.ts";
+import type { WxError, WxPromise, WxResult, WxVoid } from "./wx_error.ts";
 import {
-    type WxCloseController,
     wxFuncProtocol,
     wxFuncReturn,
     wxFuncReturnError,
     wxInternalProtocol,
+    type WxCloseController,
+    type WxOnRecvFn,
     type WxPayload,
-} from "./WxMessage.ts";
-import { wxMakePromise } from "./WxUtil.ts";
+} from "./wx_message.ts";
+import { wxMakePromise } from "./wx_util.ts";
 import { log } from "./wx_log.ts";
 
 /**
@@ -68,7 +69,7 @@ export type WxBusCreator = <TConfig extends WxProtocolConfig>(
  */
 export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
     isActiveSide: boolean,
-    endCreator: (onRecv: WxEndRecvFn) => Promise<WxResult<WxEnd>>,
+    endCreator: (onRecv: WxOnRecvFn) => Promise<WxResult<WxEnd>>,
     config: TConfig,
     timeout_?: number,
 ): Promise<WxResult<WxCreateBusOutput<TConfig>>> => {
@@ -109,6 +110,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
     // sort the protocols. Since the input is an object, the order is not guaranteed
     // and should not matter in protocol agreement
     protocolQuery.sort();
+    log.debug(`protocol query is ${protocolQuery.join(",")}`);
 
     // === Bus receive side handler ===
     // This handles:
@@ -129,6 +131,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
                 const receivedQuery = d as string[];
                 if (m === 0) {
                     const agree = shallowEqual(protocolQuery, receivedQuery);
+                    log.debug(`replying to protocol query: agreed=${agree}`);
                     // query
                     const res = end.send({
                         s: wxInternalProtocol,
@@ -147,15 +150,18 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
                     }
                 } else if (m === 1) {
                     // agree
+                    log.debug("received protocol agreement");
                     resolveProtocol({});
                     return;
                 }
 
+                const disagreeMessage = `received: ${receivedQuery.join(", ")}, expected: ${protocolQuery.join(", ")}}`;
+                log.error(`disagreed on protocol: ${disagreeMessage}`);
                 // disagree
                 resolveProtocol({
                     err: {
                         code: "ProtocolDisagree",
-                        message: `received: ${receivedQuery.join(", ")}, expected: ${protocolQuery.join(", ")}}`,
+                        message: disagreeMessage,
                     },
                 });
                 return;
@@ -184,7 +190,9 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
                 }
             } else {
                 // unknown protocol from response message, log and ignore
-                log.warn(`bus received unknown protocol for a response message: ${p}`);
+                log.warn(
+                    `bus received unknown protocol for a response message: ${p}`,
+                );
             }
             return;
         }
@@ -289,7 +297,9 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
             d: protocolQuery,
         });
         if (res.err) {
-            log.error(`bus failed to query protocols, communication not established!`);
+            log.error(
+                `bus failed to query protocols, communication not established!`,
+            );
             end.close();
             return res;
         }
@@ -306,7 +316,9 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
     removeProtocolSubscriber();
     if (protocolRes.err) {
         end.close();
-        log.error(`bus failed to agree on protocols, communication not established!`);
+        log.error(
+            `bus failed to agree on protocols, communication not established!`,
+        );
         return protocolRes;
     }
 
