@@ -35,3 +35,5 @@ export type { WxEc, WxError, WxResult, WxVoid, WxPromise } from "./wx_error.ts";
 
 export type { WxPromiseWrapper } from "./wx_util.ts";
 export { wxMakePromise, wxWrapHandler } from "./wx_util.ts";
+
+export { logLevel } from "./wx_log.ts";

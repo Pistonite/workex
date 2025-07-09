@@ -4,7 +4,10 @@ import {
     wxPopup,
     wxWindowOwner,
     wxWrapHandler,
+    logLevel,
 } from "@pistonite/workex";
+
+logLevel.debug();
 
 import type { SideA, SideB } from "./proto.ts";
 import { multiwindowSideA } from "./interfaces/SideA.bus";
@@ -192,17 +195,12 @@ const setupDiv = (
 
 const getOpenUrl = (sameOrigin: boolean) => {
     const url = new URL(window.location.href);
+    const hostname = window.location.hostname;
     if (url.port === (sameOrigin ? "4000" : "4001")) {
-        return (
-            "http://localhost:4000/index.html" +
-            `?ownerOrigin=${window.location.origin}`
-        );
+        return `http://${hostname}:4000/index.html?ownerOrigin=${window.location.origin}`;
     }
 
-    return (
-        "http://localhost:4001/index.html" +
-        `?ownerOrigin=${window.location.origin}`
-    );
+    return `http://${hostname}:4001/index.html?ownerOrigin=${window.location.origin}`;
 };
 
 void main();

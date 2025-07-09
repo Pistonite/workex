@@ -108,9 +108,9 @@ impl Imports {
         for import in &mut self.statements {
             if let Import::Import { from, .. } = import {
                 if from.starts_with("./") {
-                    *from = format!(".{}", from);
+                    *from = format!(".{from}");
                 } else if from.starts_with("../") {
-                    *from = format!("../{}", from);
+                    *from = format!("../{from}");
                 }
             }
         }

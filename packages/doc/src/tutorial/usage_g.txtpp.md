@@ -73,6 +73,9 @@ The worker code is very similar to the app code, with the following difference:
 1. Because the worker code needs to call back to the app in its handler,
    it defines a promise using `wxMakePromise` and use it to block the handler
    until the bindings are fully setup.
+   - `wxMakePromise` is a re-export of `makePromise` from my [`pure`] library.
+     You can use `import { makePromise } from "@pistonite/pure/sync";` directy if you
+     also have `pure` as dependency.
 2. It uses `wxWorkerGlobal`, which connects to the thread that created the worker (
    in this case, the main thread)
 ```

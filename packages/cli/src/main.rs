@@ -50,7 +50,7 @@ fn main() -> ExitCode {
     match main_internal() {
         Ok(_) => ExitCode::SUCCESS,
         Err(e) => {
-            eprintln!("error: {:?}", e);
+            eprintln!("error: {e:?}");
             ExitCode::FAILURE
         }
     }

@@ -151,7 +151,7 @@ fn emit_interface_bus(
 ) -> anyhow::Result<()> {
     let name = &interface.name;
 
-    let function_name = format!("{}{}", prefix, name);
+    let function_name = format!("{prefix}{name}");
 
     #[rustfmt::skip]
     let bind_config_func = match linked_interface.map(|i| &i.name) {
@@ -272,7 +272,7 @@ fn quoted(s: &str) -> String {
     if s.contains(['"', '\\']) {
         format!("\"{}\"", s.replace('"', "\\\"").replace('\\', "\\\\"))
     } else {
-        format!("\"{}\"", s)
+        format!("\"{s}\"")
     }
 }
 

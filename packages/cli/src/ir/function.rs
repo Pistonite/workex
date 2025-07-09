@@ -30,7 +30,7 @@ impl Function {
             "{",
             [cblock! {
                 if is_void_return {
-                    format!("return this.sender.sendVoid({}, [", funcid_expr)
+                    format!("return this.sender.sendVoid({funcid_expr}, [")
                 } else {
                     format!("return this.sender.send{}({}, [", self.retty_ann, funcid_expr)
                 },
