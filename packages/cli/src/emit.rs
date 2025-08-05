@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use anyhow::Context as _;
+use cu::pre::*;
+
 use codize::{Concat, cblock, cconcat};
 
 use crate::ir;
@@ -18,13 +19,13 @@ fn header() -> Concat {
 }
 
 /// Emit the output
-pub fn emit(pkg: &ir::Package) -> anyhow::Result<()> {
+pub fn emit(pkg: &ir::Package) -> cu::Result<()> {
     let func_map = make_func_id_map(pkg);
     let out_dir = &pkg.out_dir;
     if out_dir.exists() {
-        std::fs::remove_dir_all(out_dir).context("Failed to remove existing output directory")?;
+        std::fs::remove_dir_all(out_dir).context("failed to remove existing output directory")?;
     }
-    std::fs::create_dir_all(out_dir).context("Failed to create output directory")?;
+    std::fs::create_dir_all(out_dir).context("failed to create output directory")?;
 
     for interface in pkg.interfaces.values() {
         emit_interface_impl(interface, &func_map, out_dir)?;
@@ -67,7 +68,7 @@ fn emit_interface_impl(
     interface: &ir::Interface,
     func_map: &BTreeMap<String, u32>,
     out_dir: &Path,
-) -> anyhow::Result<()> {
+) -> cu::Result<()> {
     let imports = &interface.impl_imports;
 
     let ident_wxsender = &imports.ident_wxsender;
@@ -148,7 +149,7 @@ fn emit_interface_bus(
     interface: &ir::Interface,
     linked_interface: Option<&ir::Interface>,
     out_dir: &Path,
-) -> anyhow::Result<()> {
+) -> cu::Result<()> {
     let name = &interface.name;
 
     let function_name = format!("{prefix}{name}");
@@ -259,7 +260,7 @@ fn emit_interface_bus(
     Ok(())
 }
 
-fn emit_gitignore(out_dir: &Path) -> anyhow::Result<()> {
+fn emit_gitignore(out_dir: &Path) -> cu::Result<()> {
     let mut content = String::from("# workex generated files\n");
     let path = out_dir.join(".gitignore");
     content.push_str("*\n");
@@ -276,7 +277,7 @@ fn quoted(s: &str) -> String {
     }
 }
 
-fn write_file<T: AsRef<str>>(path: &Path, code: T) -> anyhow::Result<()> {
+fn write_file<T: AsRef<str>>(path: &Path, code: T) -> cu::Result<()> {
     std::fs::write(path, code.as_ref())
         .context(format!("Failed to write to {}", path.display()))?;
 

@@ -5,13 +5,7 @@
  */
 
 // creator functions
-export {
-    wxWorker,
-    wxWorkerGlobal,
-    wxPopup,
-    wxFrame,
-    wxWindowOwner,
-} from "./wx_create.ts";
+export { wxWorker, wxWorkerGlobal, wxPopup, wxFrame, wxWindowOwner } from "./wx_create.ts";
 export type { WxWorkerCreateOptions } from "./wx_create.ts";
 
 // types used in public APIs
@@ -25,11 +19,7 @@ export type {
     WxProtocolBoundSender,
     WxCreateBusOutput,
 } from "./wx_bus.ts";
-export type {
-    WxFrameLinkOptions,
-    WxWindowOpenOptions,
-    WxWindow,
-} from "./wx_window.ts";
+export type { WxFrameLinkOptions, WxWindowOpenOptions, WxWindow } from "./wx_window.ts";
 
 export type { WxEc, WxError, WxResult, WxVoid, WxPromise } from "./wx_error.ts";
 

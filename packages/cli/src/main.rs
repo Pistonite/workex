@@ -1,7 +1,5 @@
-use std::process::ExitCode;
-
-use anyhow::Context as _;
 use clap::Parser;
+use cu::pre::*;
 
 mod emit;
 mod ir;
@@ -44,26 +42,18 @@ pub struct CliOptions {
     /// Specify the name of the output directory.
     #[clap(long, default_value = "interfaces")]
     pub dir: String,
+
+    #[clap(flatten)]
+    common: cu::cli::Flags,
 }
 
-fn main() -> ExitCode {
-    match main_internal() {
-        Ok(_) => ExitCode::SUCCESS,
-        Err(e) => {
-            eprintln!("error: {e:?}");
-            ExitCode::FAILURE
-        }
-    }
-}
-
-fn main_internal() -> anyhow::Result<()> {
-    let cli = CliOptions::parse();
-
+#[cu::cli(flags = "common")]
+fn main(cli: CliOptions) -> cu::Result<()> {
     let interfaces =
-        parse::load_interfaces_from_inputs(&cli.inputs).context("Failed to parse input files")?;
+        parse::load_interfaces_from_inputs(&cli.inputs).context("failed to parse input files")?;
     let package = ir::Package::try_new(&cli, interfaces)?;
 
-    emit::emit(&package).context("Failed to emit output")?;
-    println!("{} interfaces generated", package.interfaces.len());
+    emit::emit(&package).context("failed to emit output")?;
+    cu::info!("{} interfaces generated", package.interfaces.len());
     Ok(())
 }

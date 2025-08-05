@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use anyhow::{Context as _, bail};
+use cu::pre::*;
 
 use derive_more::{Deref, DerefMut};
 use swc_common::comments::SingleThreadedComments;
@@ -44,7 +44,7 @@ impl Default for Context {
 }
 
 impl Context {
-    pub fn parse(mut self, inputs: &[String]) -> anyhow::Result<BTreeMap<String, ir::Interface>> {
+    pub fn parse(mut self, inputs: &[String]) -> cu::Result<BTreeMap<String, ir::Interface>> {
         let mut out = BTreeMap::new();
         for input in inputs {
             let file_ctx = FileContext::try_new(&mut self, input)
@@ -53,7 +53,7 @@ impl Context {
         }
 
         if self.errors > 0 {
-            bail!("Found {} errors while parsing input files", self.errors);
+            cu::bail!("Found {} errors while parsing input files", self.errors);
         }
 
         Ok(out)
@@ -81,19 +81,19 @@ pub struct FileContext<'a> {
 
 impl<'a> FileContext<'a> {
     /// Create a new file parsing context and load the file
-    pub fn try_new(ctx: &'a mut Context, path: &str) -> anyhow::Result<Self> {
+    pub fn try_new(ctx: &'a mut Context, path: &str) -> cu::Result<Self> {
         let path = Path::new(path);
 
         let Some(filename) = path.file_name() else {
-            bail!("Failed to get file name from path: {}", path.display());
+            cu::bail!("Failed to get file name from path: {}", path.display());
         };
 
         let Some(filename) = filename.to_str() else {
-            bail!("File name must be valid UTF-8");
+            cu::bail!("File name must be valid UTF-8");
         };
 
         if filename.ends_with(".bus.ts") {
-            bail!(".bus.ts is a reserved file extension for generated files.");
+            cu::bail!(".bus.ts is a reserved file extension for generated files.");
         }
 
         let comments = SingleThreadedComments::default();
