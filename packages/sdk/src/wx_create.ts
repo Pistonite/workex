@@ -1,13 +1,5 @@
-import {
-    type WxBusCreator,
-    wxCreateBus,
-    type WxProtocolConfig,
-} from "./wx_bus.ts";
-import {
-    type WorkerLike,
-    wxMakeWorkerEnd,
-    wxMakeWorkerGlobalEnd,
-} from "./wx_end.ts";
+import { type WxBusCreator, wxCreateBus, type WxProtocolConfig } from "./wx_bus.ts";
+import { type WorkerLike, wxMakeWorkerEnd, wxMakeWorkerGlobalEnd } from "./wx_end.ts";
 import { log } from "./wx_log.ts";
 import {
     type IFrameLike,
@@ -28,10 +20,7 @@ export type WxWorkerCreateOptions = {
  * Create connection to a Worker. The worker should connect to this end using
  * {@link wxWorkerGlobal}.
  */
-export const wxWorker = (
-    worker: WorkerLike,
-    options?: WxWorkerCreateOptions,
-): WxBusCreator => {
+export const wxWorker = (worker: WorkerLike, options?: WxWorkerCreateOptions): WxBusCreator => {
     return <TConfig extends WxProtocolConfig>(config: TConfig) => {
         log.info("creating connection to worker");
         return wxCreateBus(
@@ -51,9 +40,7 @@ export const wxWorker = (
  *
  * This will fail if called when `globalThis` is not a `WorkerGlobalScope`.
  */
-export const wxWorkerGlobal = (
-    options?: WxWorkerCreateOptions,
-): WxBusCreator => {
+export const wxWorkerGlobal = (options?: WxWorkerCreateOptions): WxBusCreator => {
     return <TConfig extends WxProtocolConfig>(config: TConfig) => {
         log.info("creating worker global connection");
         return wxCreateBus(
@@ -76,10 +63,7 @@ export const wxWorkerGlobal = (
  *
  * This will fail if called when `globalThis` is not a `Window`.
  */
-export const wxPopup = (
-    url: string,
-    options?: WxWindowOpenOptions,
-): WxBusCreator => {
+export const wxPopup = (url: string, options?: WxWindowOpenOptions): WxBusCreator => {
     return <TConfig extends WxProtocolConfig>(config: TConfig) => {
         log.info("creating connection to popup");
         return wxCreateBus(
@@ -106,10 +90,7 @@ export const wxPopup = (
  *
  * This will fail if called when `globalThis` is not a `Window`.
  */
-export const wxFrame = (
-    frame: IFrameLike,
-    options?: WxFrameLinkOptions,
-): WxBusCreator => {
+export const wxFrame = (frame: IFrameLike, options?: WxFrameLinkOptions): WxBusCreator => {
     return <TConfig extends WxProtocolConfig>(config: TConfig) => {
         log.info("creating connection to frame");
         return wxCreateBus(

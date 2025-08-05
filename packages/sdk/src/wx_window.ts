@@ -67,11 +67,7 @@ export type WxWindow = {
      * The returned end is tied to the window. If either the window or the end is closed,
      * the popup window and the connection will be closed.
      */
-    popup(
-        url: string,
-        onRecv: WxOnRecvFn,
-        options?: WxWindowOpenOptions,
-    ): Promise<WxResult<WxEnd>>;
+    popup(url: string, onRecv: WxOnRecvFn, options?: WxWindowOpenOptions): Promise<WxResult<WxEnd>>;
 
     /**
      * Create a {@link WxEnd} for messaging to an iframe
@@ -106,10 +102,7 @@ export const wxWindow = (): WxResult<WxWindow> => {
         return { val: wxWindowGlobal };
     }
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    if (
-        !("Window" in globalThis) ||
-        !(globalThis instanceof (globalThis as any).Window)
-    ) {
+    if (!("Window" in globalThis) || !(globalThis instanceof (globalThis as any).Window)) {
         return {
             err: {
                 code: "NotWindow",
@@ -167,11 +160,7 @@ export const wxWindow = (): WxResult<WxWindow> => {
         }
         let targetWindow: WindowLike | null = null;
         try {
-            targetWindow = (globalThis as unknown as WindowLike).open(
-                url,
-                "_blank",
-                features,
-            );
+            targetWindow = (globalThis as unknown as WindowLike).open(url, "_blank", features);
         } catch (e) {
             log.error(e);
             targetWindow = null;
@@ -193,11 +182,9 @@ export const wxWindow = (): WxResult<WxWindow> => {
 
         // when closing this page, also close the popup
         const controllerClosePopupWhenClosingSelf = new AbortController();
-        (globalThis as unknown as WindowLike).addEventListener(
-            "pagehide",
-            end.val.close,
-            { signal: controllerClosePopupWhenClosingSelf.signal },
-        );
+        (globalThis as unknown as WindowLike).addEventListener("pagehide", end.val.close, {
+            signal: controllerClosePopupWhenClosingSelf.signal,
+        });
         void end.val.onClose(() => {
             controllerClosePopupWhenClosingSelf.abort();
             // attempt to close the window, ignore errors
@@ -254,10 +241,7 @@ export const wxWindow = (): WxResult<WxWindow> => {
     return { val: wxWindowGlobal };
 };
 
-const createOwnerFnFor = (
-    ownerWindow: WindowLike,
-    origin: string,
-): WxWindow["owner"] => {
+const createOwnerFnFor = (ownerWindow: WindowLike, origin: string): WxWindow["owner"] => {
     return once({
         fn: async (
             ownerOrigin: string,
@@ -268,26 +252,20 @@ const createOwnerFnFor = (
             if (origin === ownerOrigin) {
                 if (wxSameContextGlobalEndCreator in globalThis) {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const globalEndCreator = (globalThis as any)[
-                        wxSameContextGlobalEndCreator
-                    ];
+                    const globalEndCreator = (globalThis as any)[wxSameContextGlobalEndCreator];
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (globalThis as any)[wxSameContextGlobalEndCreator] =
-                        undefined;
-                    if (
-                        globalEndCreator &&
-                        typeof globalEndCreator === "function"
-                    ) {
+                    (globalThis as any)[wxSameContextGlobalEndCreator] = undefined;
+                    if (globalEndCreator && typeof globalEndCreator === "function") {
                         try {
-                            const end: WxResult<WxEnd> =
-                                await globalEndCreator(onRecv);
+                            const end: WxResult<WxEnd> = await globalEndCreator(onRecv);
                             // close the connection when this window is closed
                             if (end.val) {
-                                (
-                                    globalThis as unknown as WindowLike
-                                ).addEventListener("pagehide", () => {
-                                    end.val.close();
-                                });
+                                (globalThis as unknown as WindowLike).addEventListener(
+                                    "pagehide",
+                                    () => {
+                                        end.val.close();
+                                    },
+                                );
                                 // for same origin linking, closing the end is enough
                                 // to notify the other side to trigger close listeners
                                 // and close the window
@@ -317,10 +295,7 @@ const createOwnerFnFor = (
                         "message",
                         (event: unknown) => {
                             /* eslint-disable @typescript-eslint/no-explicit-any */
-                            if (
-                                event &&
-                                (event as any).source === ownerWindow
-                            ) {
+                            if (event && (event as any).source === ownerWindow) {
                                 handler(event);
                             }
                             /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -339,12 +314,9 @@ const createOwnerFnFor = (
             const { start, close, isClosed, onClose } = controller.val;
 
             // close the connection when this window is closed
-            (globalThis as unknown as WindowLike).addEventListener(
-                "pagehide",
-                () => {
-                    close();
-                },
-            );
+            (globalThis as unknown as WindowLike).addEventListener("pagehide", () => {
+                close();
+            });
             // when connection is closed, send close message to the other end
             void onClose(() => {
                 ownerWindow.postMessage(
@@ -394,9 +366,7 @@ const linkToTargetWindow = (
         return new Promise<WxResult<WxEnd>>((resolve) => {
             try {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (targetWindow as any)[wxSameContextGlobalEndCreator] = (
-                    onRecvB: WxOnRecvFn,
-                ) => {
+                (targetWindow as any)[wxSameContextGlobalEndCreator] = (onRecvB: WxOnRecvFn) => {
                     const [endA, endB] = wxMakeChannel(onRecv, onRecvB);
                     resolve({ val: endA });
                     return { val: endB };
@@ -405,20 +375,13 @@ const linkToTargetWindow = (
             } catch (e) {
                 log.error(e);
                 resolve({
-                    err: wxFail(
-                        "Failed to create same-context linking: " + errstr(e),
-                    ),
+                    err: wxFail("Failed to create same-context linking: " + errstr(e)),
                 });
             }
         });
     }
 
-    return linkToTargetWindowCrossOrigin(
-        targetWindow,
-        targetOrigin,
-        onRecv,
-        options,
-    );
+    return linkToTargetWindowCrossOrigin(targetWindow, targetOrigin, onRecv, options);
 };
 
 const linkToTargetWindowCrossOrigin = async (

@@ -7,11 +7,7 @@
 export { wxFail } from "./wx_error.ts";
 
 export type { WxEnd, WxEndOptions, WorkerLike } from "./wx_end.ts";
-export {
-    wxMakeWorkerEnd,
-    wxMakeWorkerGlobalEnd,
-    wxMakeChannel,
-} from "./wx_end.ts";
+export { wxMakeWorkerEnd, wxMakeWorkerGlobalEnd, wxMakeChannel } from "./wx_end.ts";
 
 export type {
     WxPayload,

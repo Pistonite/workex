@@ -100,9 +100,7 @@ export const wxFuncProtocol = 4 as const;
 export type WxMessage = WxPayload & { s: typeof wxInternalProtocol };
 
 /** Validate the received data is a valid workex message */
-export const isWxMessageEvent = (
-    event: unknown,
-): event is { data: WxPayload } => {
+export const isWxMessageEvent = (event: unknown): event is { data: WxPayload } => {
     if (!event) {
         return false;
     }
@@ -116,9 +114,7 @@ export const isWxMessageEvent = (
         return false;
     }
 
-    return (
-        typeof data.m === "number" && typeof data.f === "number" && "d" in data
-    );
+    return typeof data.m === "number" && typeof data.f === "number" && "d" in data;
 };
 
 /**

@@ -38,17 +38,13 @@ const main = async () => {
         });
 
         if (result.err) {
-            addMessage(
-                `failed to connect to owner: ${JSON.stringify(result.err)}`,
-            );
+            addMessage(`failed to connect to owner: ${JSON.stringify(result.err)}`);
         } else {
             const {
                 connection,
                 protocols: { sideA },
             } = result.val;
-            const divOwnerButtons = document.getElementById(
-                "div-owner-buttons",
-            ) as HTMLDivElement;
+            const divOwnerButtons = document.getElementById("div-owner-buttons") as HTMLDivElement;
             const closeButton = document.createElement("button");
             closeButton.innerText = "Close";
             closeButton.addEventListener("click", async () => {
@@ -63,9 +59,7 @@ const main = async () => {
                 addMessage("sending to owner");
                 const result = await sideA.logMessage("hello hey hey");
                 if (result.err) {
-                    addMessage(
-                        `failed to send to owner: ${JSON.stringify(result.err)}`,
-                    );
+                    addMessage(`failed to send to owner: ${JSON.stringify(result.err)}`);
                 } else {
                     addMessage("returned from owner");
                 }
@@ -134,9 +128,7 @@ const setupDiv = (
 
         const frame = iframe?.();
         if (frame) {
-            const divFrames = document.getElementById(
-                "div-frames",
-            ) as HTMLDivElement;
+            const divFrames = document.getElementById("div-frames") as HTMLDivElement;
             divFrames.appendChild(frame);
         }
 
@@ -178,9 +170,7 @@ const setupDiv = (
             addMessage(`sending to ${name}`);
             const result = await sideB.logMessage("hello hey hey");
             if (result.err) {
-                addMessage(
-                    `failed to send to ${name}: ${JSON.stringify(result.err)}`,
-                );
+                addMessage(`failed to send to ${name}: ${JSON.stringify(result.err)}`);
             } else {
                 addMessage(`returned from ${name}`);
             }

@@ -126,10 +126,7 @@ export const wxMakeWorkerEnd = async (
  * call returned an error.
  */
 export const wxMakeWorkerGlobalEnd = once({
-    fn: async (
-        onRecv: WxOnRecvFn,
-        option?: WxEndOptions,
-    ): Promise<WxResult<WxEnd>> => {
+    fn: async (onRecv: WxOnRecvFn, option?: WxEndOptions): Promise<WxResult<WxEnd>> => {
         /* eslint-disable @typescript-eslint/no-explicit-any */
         if (
             !("WorkerGlobalScope" in globalThis) ||
@@ -148,11 +145,9 @@ export const wxMakeWorkerGlobalEnd = once({
             (handler, signal) => {
                 // worker global scope can only communicate with the thread
                 // that created the worker, so we don't need extra handling
-                (globalThis as unknown as WorkerLike).addEventListener(
-                    "message",
-                    handler,
-                    { signal },
-                );
+                (globalThis as unknown as WorkerLike).addEventListener("message", handler, {
+                    signal,
+                });
             },
             (message: WxMessage) => {
                 (globalThis as unknown as WorkerLike).postMessage(message);
@@ -200,10 +195,7 @@ export const wxMakeWorkerGlobalEnd = once({
  * Calling `close` on either end will close the channel immediately (any message sent but not received
  * will also not be received).
  */
-export const wxMakeChannel = (
-    onRecvA: WxOnRecvFn,
-    onRecvB: WxOnRecvFn,
-): [WxEnd, WxEnd] => {
+export const wxMakeChannel = (onRecvA: WxOnRecvFn, onRecvB: WxOnRecvFn): [WxEnd, WxEnd] => {
     const { close, isClosed, onClose } = wxMakeCloseController();
     // sending close message from either side is equivalent
     // to calling close from either side

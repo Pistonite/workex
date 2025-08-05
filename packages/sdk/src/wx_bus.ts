@@ -79,10 +79,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
     const protocolQuery: string[] = [];
     const protocolToVariableKey: Record<string, string> = {};
     const protocolToHandler: Record<string, WxBusRecvHandler> = {};
-    const protocolToBindSender: Record<
-        string,
-        (sender: WxProtocolBoundSender) => unknown
-    > = {};
+    const protocolToBindSender: Record<string, (sender: WxProtocolBoundSender) => unknown> = {};
     for (const p in config) {
         const { protocol, interfaces, bindSend, recvHandler } = config[p];
         if (protocols.has(protocol)) {
@@ -118,11 +115,9 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
     // - routes return messages to pending promises
     // - routes incoming requests to the correct handler
 
-    const pendingMessages: Map<number, (value: WxResult<unknown>) => void> =
-        new Map();
+    const pendingMessages: Map<number, (value: WxResult<unknown>) => void> = new Map();
 
-    const { promise: protocolPromise, resolve: resolveProtocol } =
-        wxMakePromise<WxVoid>();
+    const { promise: protocolPromise, resolve: resolveProtocol } = wxMakePromise<WxVoid>();
 
     const onRecv = async ({ p, m, f, d }: WxPayload) => {
         if (p === wxInternalProtocol) {
@@ -190,9 +185,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
                 }
             } else {
                 // unknown protocol from response message, log and ignore
-                log.warn(
-                    `bus received unknown protocol for a response message: ${p}`,
-                );
+                log.warn(`bus received unknown protocol for a response message: ${p}`);
             }
             return;
         }
@@ -297,9 +290,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
             d: protocolQuery,
         });
         if (res.err) {
-            log.error(
-                `bus failed to query protocols, communication not established!`,
-            );
+            log.error(`bus failed to query protocols, communication not established!`);
             end.close();
             return res;
         }
@@ -316,9 +307,7 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
     removeProtocolSubscriber();
     if (protocolRes.err) {
         end.close();
-        log.error(
-            `bus failed to agree on protocols, communication not established!`,
-        );
+        log.error(`bus failed to agree on protocols, communication not established!`);
         return protocolRes;
     }
 
@@ -327,9 +316,9 @@ export const wxCreateBus = async <TConfig extends WxProtocolConfig>(
 
     const keyToSender: Record<string, unknown> = {};
     for (const protocol in protocolToBindSender) {
-        keyToSender[protocolToVariableKey[protocol]] = protocolToBindSender[
-            protocol
-        ](new WxProtocolBoundSenderImpl(sender, protocol));
+        keyToSender[protocolToVariableKey[protocol]] = protocolToBindSender[protocol](
+            new WxProtocolBoundSenderImpl(sender, protocol),
+        );
     }
 
     return {
@@ -370,10 +359,7 @@ class WxProtocolBoundSenderImpl implements WxProtocolBoundSender {
         return {};
     }
 
-    public async send<TReturn>(
-        fId: number,
-        data: unknown[],
-    ): WxPromise<TReturn> {
+    public async send<TReturn>(fId: number, data: unknown[]): WxPromise<TReturn> {
         return this.sender.send<TReturn>(this.protocol, fId, data);
     }
 }
@@ -395,11 +381,7 @@ class WxBusSender {
         this.timeout = timeout;
     }
 
-    public async send<TReturn>(
-        protocol: string,
-        fId: number,
-        data: unknown[],
-    ): WxPromise<TReturn> {
+    public async send<TReturn>(protocol: string, fId: number, data: unknown[]): WxPromise<TReturn> {
         const mIdRes = this.nextMId();
         if (mIdRes.err) {
             return mIdRes;
@@ -485,7 +467,5 @@ export type WxCreateBusOutput<TConfig extends WxProtocolConfig> = {
  * Output of wxCreateBus
  */
 export type WxProtocolOutput<TConfig extends WxProtocolConfig> = {
-    [K in keyof TConfig]: TConfig[K] extends WxProtocolBindConfig<infer TSender>
-        ? TSender
-        : never;
+    [K in keyof TConfig]: TConfig[K] extends WxProtocolBindConfig<infer TSender> ? TSender : never;
 };
