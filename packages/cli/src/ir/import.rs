@@ -1,5 +1,5 @@
 use codize::{Code, cblock, cconcat, clist};
-use derive_more::{Deref, DerefMut};
+use cu::pre::*;
 
 static WORKEX_IMPORT: &str = "@pistonite/workex";
 

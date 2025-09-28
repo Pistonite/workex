@@ -2,7 +2,7 @@
     "type": "module",
     "devDependencies": {
         "@pistonite/workex": "workspace:*",
-        "@types/bun": "^1.2.19",
+        "@types/bun": "^1.2.23",
         "mono-dev": "workspace:*"
     },
     "nocheck": [

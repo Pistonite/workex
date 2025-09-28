@@ -1,7 +1,7 @@
 {
 	"devDependencies": {
-		"eslint": "^9.32.0",
-		"serve": "^14.2.4",
-		"typedoc": "^0.28.9"
+		"eslint": "^9.36.0",
+		"serve": "^14.2.5",
+		"typedoc": "^0.28.13"
 	}
 }
