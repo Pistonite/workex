@@ -3,7 +3,6 @@
         "@pistonite/workex": "workspace:*"
     },
     "devDependencies": {
-        "serve": "^14.2.4",
-        "typescript": "=5.8.3"
+        "serve": "^14.2.5"
     }
 }
