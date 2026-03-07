@@ -53,10 +53,15 @@ impl FileContext<'_> {
             }
         }
 
+        let Some(import_src) = import.src.value.as_str() else {
+            self.emit_error(import.src.span, "import source string is not utf-8");
+            return None;
+        };
+
         Some(ir::Import::Import {
             is_type: import.type_only,
             idents,
-            from: import.src.value.to_string(),
+            from: import_src.to_string(),
         })
     }
 

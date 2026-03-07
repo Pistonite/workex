@@ -3,7 +3,6 @@ use std::path::Path;
 
 use cu::pre::*;
 
-use derive_more::{Deref, DerefMut};
 use swc_common::comments::SingleThreadedComments;
 use swc_common::errors::Handler;
 use swc_common::sync::Lrc;
@@ -47,13 +46,15 @@ impl Context {
     pub fn parse(mut self, inputs: &[String]) -> cu::Result<BTreeMap<String, ir::Interface>> {
         let mut out = BTreeMap::new();
         for input in inputs {
-            let file_ctx = FileContext::try_new(&mut self, input)
-                .with_context(|| format!("Failed to load file: {input}"))?;
-            file_ctx.parse(&mut out);
+            let file_ctx = cu::check!(
+                FileContext::try_new(&mut self, input),
+                "failed to load file: {input}"
+            )?;
+            file_ctx.parse_into(&mut out);
         }
 
         if self.errors > 0 {
-            cu::bail!("Found {} errors while parsing input files", self.errors);
+            cu::bail!("found {} errors while parsing input files", self.errors);
         }
 
         Ok(out)
@@ -85,11 +86,11 @@ impl<'a> FileContext<'a> {
         let path = Path::new(path);
 
         let Some(filename) = path.file_name() else {
-            cu::bail!("Failed to get file name from path: {}", path.display());
+            cu::bail!("failed to get file name from path: {}", path.display());
         };
 
         let Some(filename) = filename.to_str() else {
-            cu::bail!("File name must be valid UTF-8");
+            cu::bail!("file name must be valid UTF-8");
         };
 
         if filename.ends_with(".bus.ts") {
@@ -98,10 +99,10 @@ impl<'a> FileContext<'a> {
 
         let comments = SingleThreadedComments::default();
 
-        let source_file = ctx
-            .source_map
-            .load_file(path)
-            .context("Failed to load input file into parser")?;
+        let source_file = cu::check!(
+            ctx.source_map.load_file(path),
+            "failed to load input file into parser"
+        )?;
 
         Ok(Self {
             ctx,
@@ -112,7 +113,7 @@ impl<'a> FileContext<'a> {
     }
 
     /// Parses the interfaces in the file and adds them to the output
-    pub fn parse(mut self, out: &mut BTreeMap<String, ir::Interface>) {
+    pub fn parse_into(mut self, out: &mut BTreeMap<String, ir::Interface>) {
         let lexer = Lexer::new(
             Syntax::Typescript(Default::default()),
             EsVersion::EsNext,
