@@ -1,20 +1,17 @@
+/** @module wx_create */
 import { type WxBusCreator, wxCreateBus, type WxProtocolConfig } from "./wx_bus.ts";
-import { type WorkerLike, wxMakeWorkerEnd, wxMakeWorkerGlobalEnd } from "./wx_end.ts";
+import { wxMakeWorkerEnd, wxMakeWorkerGlobalEnd } from "./wx_end.ts";
 import { log } from "./wx_log.ts";
-import {
-    type IFrameLike,
-    type WxFrameLinkOptions,
-    wxWindow,
-    type WxWindowOpenOptions,
-} from "./wx_window.ts";
+import type { IFrameLike, WorkerLike } from "./wx_util.ts";
+import { type WxFrameLinkOptions, wxWindow, type WxWindowOpenOptions } from "./wx_window.ts";
 
 /**
  * Options to create Worker connections, using {@link wxWorker} or {@link wxWorkerGlobal}.
  */
-export type WxWorkerCreateOptions = {
+export interface WxWorkerCreateOptions {
     /** Timeout for initialization and messaging, default is 60s */
     timeout?: number;
-};
+}
 
 /**
  * Create connection to a Worker. The worker should connect to this end using

@@ -17,10 +17,10 @@ declare const console: {
 declare const setTimeout: (fn: () => void, ms: number) => number;
 declare const clearTimeout: (id: number) => void;
 
-declare type AbortController = {
+declare interface AbortController {
     signal: AbortSignal;
     abort: () => void;
-};
+}
 declare const AbortController: {
     new (): AbortController;
 };

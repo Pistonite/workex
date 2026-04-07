@@ -26,3 +26,48 @@ export const wxWrapHandler = <T extends (...args: any[]) => any>(
         return { val: result } as any;
     };
 };
+
+/**
+ * Things that looks like a `Worker`
+ * @ignore
+ */
+export interface WorkerLike {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    postMessage: (message: any) => any;
+    addEventListener: (
+        type: string,
+        listener: (event: any) => any,
+        options?: { signal?: any },
+    ) => any;
+    terminate?: (() => void) | null;
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+}
+
+/** @ignore */
+export interface IFrameLike {
+    src: string;
+    contentWindow?: WindowLike | null;
+}
+
+/**
+ * Things that looks like a `Window`
+ * @ignore
+ */
+export interface WindowLike {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    postMessage: (message: any, targetOrigin: string) => any;
+    addEventListener: (
+        type: string,
+        listener: (event: any) => any,
+        options?: { signal?: any },
+    ) => any;
+    opener?: WindowLike | null;
+    parent?: WindowLike | null;
+    location?: {
+        origin?: string;
+    };
+    open: (url: string, target: string, features: string) => WindowLike | null;
+    close?: () => void;
+    closed?: boolean;
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+}

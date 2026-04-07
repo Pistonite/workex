@@ -10,6 +10,7 @@ import {
     type WxMessage,
     type WxOnRecvFn,
 } from "./wx_message.ts";
+import type { WorkerLike } from "./wx_util.ts";
 
 /**
  * Messaging primitive representing one end of an established messaging channel
@@ -22,12 +23,17 @@ import {
  * is that any valid `WxEnd` objects you create with functions in this library will
  * first establish the handshake.
  */
-export type WxEnd = WxCloseController & {
+export interface WxEnd extends WxCloseController {
     /** Send a message to the other end */
     send: (message: WxMessage) => WxVoid;
-};
+}
 
-export type WxEndOptions = {
+/**
+ * First
+ *
+ * Second
+ */
+export interface WxEndOptions {
     /**
      * If specified and non-zero, the creation will fail if the connection
      * is not established within the number of seconds (for example, the worker
@@ -36,24 +42,11 @@ export type WxEndOptions = {
      * Default is 60 seconds
      */
     timeout?: number;
-};
+}
 
 /**
- * Things that looks like a `Worker`
- */
-export type WorkerLike = {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    postMessage: (message: any) => any;
-    addEventListener: (
-        type: string,
-        listener: (event: any) => any,
-        options?: { signal?: any },
-    ) => any;
-    terminate?: (() => void) | null;
-    /* eslint-enable @typescript-eslint/no-explicit-any */
-};
-
-/**
+ *
+ * 
  * Create a {@link WxEnd} for messaging to a `Worker` or `WorkerGlobalScope`.
  *
  * Note that even `Window` objects satisfy the `WorkerLike` interface,
@@ -63,6 +56,7 @@ export type WorkerLike = {
  * The worker will be terminated if the connection cannot be established.
  * After the connection is established, the worker will be terminated when
  * the `WxEnd` is closed.
+ *
  *
  * @param onRecv callback to register when receiving a message from the other end
  */
@@ -121,9 +115,28 @@ export const wxMakeWorkerEnd = async (
 /**
  * Create an `WxEnd` bound to the global `WorkerGlobalScope`.
  *
+ * @remarks
  * Calling this when `globalThis` is not a `WorkerGlobalScope` will result in an error.
  * Calling this function multiple times will return the same promise - even if previous
  * call returned an error.
+ *
+ * **Internal API** - See {@link public!wxWorkerGlobal}
+ *
+ * @variable
+ */
+export const test = "123";
+
+/**
+ * Create an `WxEnd` bound to the global `WorkerGlobalScope`.
+ *
+ * @remarks
+ * Calling this when `globalThis` is not a `WorkerGlobalScope` will result in an error.
+ * Calling this function multiple times will return the same promise - even if previous
+ * call returned an error.
+ *
+ * **Internal API** - See {@link public!wxWorkerGlobal}
+ *
+ * @function
  */
 export const wxMakeWorkerGlobalEnd = once({
     fn: async (onRecv: WxOnRecvFn, option?: WxEndOptions): Promise<WxResult<WxEnd>> => {

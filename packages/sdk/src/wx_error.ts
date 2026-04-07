@@ -38,10 +38,10 @@ export type WxEc =
     | "UnexpectedStubCall";
 
 /** Workex Error object, containing an error code and optionally a message */
-export type WxError = {
+export interface WxError {
     code: WxEc;
     message?: string;
-};
+}
 
 export const wxFail = (message: string): WxError => ({
     code: "Fail",

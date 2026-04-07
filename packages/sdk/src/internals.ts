@@ -1,13 +1,18 @@
 /**
  * Internal implementation details
  *
- * Consumer should only import from "/", which re-exports all public APIs and types
- * See {@link public}
+ * Consumer should only import from `@pistonite/workex`, which re-exports all public APIs and types.
+ * Importing from `@pistonite/workex/internals` is considered unstable.
+ *
+ * See {@link public}.
+ *
+ * @module
  */
 export { wxFail } from "./wx_error.ts";
+export type { WindowLike, IFrameLike, WorkerLike } from "./wx_util.ts";
 
-export type { WxEnd, WxEndOptions, WorkerLike } from "./wx_end.ts";
-export { wxMakeWorkerEnd, wxMakeWorkerGlobalEnd, wxMakeChannel } from "./wx_end.ts";
+export type { WxEnd, WxEndOptions } from "./wx_end.ts";
+export { wxMakeWorkerEnd, wxMakeWorkerGlobalEnd, wxMakeChannel, test } from "./wx_end.ts";
 
 export type {
     WxPayload,
@@ -28,7 +33,4 @@ export {
     wxMakeMessageController,
 } from "./wx_message.ts";
 
-export type { WindowLike, IFrameLike } from "./wx_window.ts";
 export { wxWindow } from "./wx_window.ts";
-
-export { log } from "./wx_log.ts";

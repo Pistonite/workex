@@ -1,6 +1,6 @@
 {
     "name": "@pistonite/workex",
-    "version": "0.1.5",
+    "version": "0.2.0",
     "description": "TypeScript SDK for Workex - The in-house messaging bindgen library for my projects",
     "homepage": "https://github.com/Pistonite/workex",
     "bugs": {
@@ -10,12 +10,18 @@
     "license": "MIT",
     "author": "Pistonight <pistonknight@outlook.com>",
     "files": [
-        "src/**/*",
-        "!src/**/*.test.ts"
+        "dist/**/*",
+        "src/**/*"
     ],
     "exports": {
-        ".": "./src/index.ts",
-        "./internals": "./src/internals.ts"
+        ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/_dts_/src/index.d.ts"
+        },
+        "./internals": {
+            "import": "./dist/internals.js",
+            "types": "./dist/_dts_/src/internals.d.ts"
+        }
     },
     "repository": {
         "type": "git",
@@ -23,9 +29,10 @@
         "directory": "packages/sdk"
     },
     "dependencies": {
-        "@pistonite/pure": "^0.28.0"
+        "@pistonite/pure": "^0.29.2"
     },
     "devDependencies": {
-        "mono-dev": "workspace:*"
+        "mono-dev": "link:../../../mono-dev",
+        "typedoc": "^0.28.18"
     }
 }
