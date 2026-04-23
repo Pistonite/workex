@@ -41,7 +41,8 @@ jobs:
           mono-dev: false
           rust: stable
           ecma-pnpm: true
-      - run: task install
+      - run: pnpm install
+      - run: task post-install
       - run: task check
       - run: task test
 
@@ -55,7 +56,8 @@ jobs:
           ecma-pnpm: true
           tool-mdbook: true
           tool-cargo-install: txtpp
-      - run: task install
+      - run: pnpm install
+      - run: task post-install
       - run: task build-doc
       - uses: actions/upload-pages-artifact@v5
         if: github.event_name != 'pull_request'
