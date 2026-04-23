@@ -12,7 +12,7 @@ export { wxFail } from "./wx_error.ts";
 export type { WindowLike, IFrameLike, WorkerLike } from "./wx_util.ts";
 
 export type { WxEnd, WxEndOptions } from "./wx_end.ts";
-export { wxMakeWorkerEnd, wxMakeWorkerGlobalEnd, wxMakeChannel, test } from "./wx_end.ts";
+export { wxMakeWorkerEnd, wxMakeWorkerGlobalEnd, wxMakeChannel, test, Foo } from "./wx_end.ts";
 
 export type {
     WxPayload,

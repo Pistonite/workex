@@ -13,20 +13,19 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - image: ubuntu-latest
+          - image: blacksmith-4vcpu-ubuntu-2404
             target: x64
-          - image: ubuntu-24.04-arm
+          - image: blacksmith-4vcpu-ubuntu-2404-arm
             target: arm64
-          - image: macos-latest
+          - image: blacksmith-6vcpu-macos-latest
             target: arm64
-          - image: windows-latest
+          - image: blacksmith-4vcpu-windows-2025
             target: x64
-          - image: windows-11-arm
-            target: arm64
     runs-on: ${{ matrix.image }}
     steps:
       - uses: Pistonight/mono-dev/actions/setup@main
         with:
+          mono-dev: false
           rust: stable
           rust-native: ${{ matrix.target }}
       - uses: Pistonight/mono-dev/actions/rust-xplat@main
@@ -35,25 +34,15 @@ jobs:
           binary: workex
 
   check:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: Pistonight/mono-dev/actions/setup@main
         with:
-          submodules: true
+          mono-dev: false
           rust: stable
           ecma-pnpm: true
-      - run: task install-ci
+      - run: task install
       - run: task check
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: Pistonight/mono-dev/actions/setup@main
-        with:
-          submodules: true
-          rust: stable
-          ecma-pnpm: true
-      - run: task install-ci
       - run: task test
 
   docs:
@@ -61,14 +50,14 @@ jobs:
     steps:
       - uses: Pistonight/mono-dev/actions/setup@main
         with:
-          submodules: true
+          mono-dev: false
           rust: stable
           ecma-pnpm: true
           tool-mdbook: true
           tool-cargo-install: txtpp
-      - run: task install-ci
+      - run: task install
       - run: task build-doc
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         if: github.event_name != 'pull_request'
         with:
           path: packages/doc/book
@@ -88,4 +77,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v`

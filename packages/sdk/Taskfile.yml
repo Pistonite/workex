@@ -22,3 +22,6 @@ tasks:
 
   publish:
     - pnpm publish --access public
+
+  upgrade:
+    - pnpm up mono-dev @pistonite/pure

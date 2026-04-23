@@ -1,7 +1,6 @@
 {
 	"devDependencies": {
-		"eslint": "^9.36.0",
-		"serve": "^14.2.5",
-		"typedoc": "^0.28.13"
+		"eslint": "^9",
+        "mono-dev": "catalog:"
 	}
 }

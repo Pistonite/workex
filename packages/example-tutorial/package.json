@@ -3,6 +3,7 @@
         "@pistonite/workex": "workspace:*"
     },
     "devDependencies": {
+        "@typescript/native-preview": "7.0.0-dev.20260422.1",
         "serve": "^14.2.5"
     }
 }

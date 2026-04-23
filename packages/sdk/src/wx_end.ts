@@ -33,6 +33,36 @@ export interface WxEnd extends WxCloseController {
  *
  * Second
  */
+export class Foo {
+    /**
+     * This
+     *
+     * is a bar
+     */
+    bar: string
+    /**
+     * This
+     *
+     * is the constructor
+     */
+    constructor() {
+        this.bar = "hello";
+    }
+    /**
+     * This
+     *
+     * is the test
+     */
+    test() {
+        console.info('hi');
+    }
+}
+
+/**
+ * First
+ *
+ * Second
+ */
 export interface WxEndOptions {
     /**
      * If specified and non-zero, the creation will fail if the connection

@@ -29,10 +29,9 @@
         "directory": "packages/sdk"
     },
     "dependencies": {
-        "@pistonite/pure": "^0.29.2"
+        "@pistonite/pure": "^0.29.4"
     },
     "devDependencies": {
-        "mono-dev": "link:../../../mono-dev",
-        "typedoc": "^0.28.18"
+        "mono-dev": "catalog:"
     }
 }
