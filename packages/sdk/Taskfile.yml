@@ -21,6 +21,9 @@ tasks:
     - task: ecma:doc-dev
 
   publish:
+    - rm -rf dist
+    - task: check
+    - task: build
     - pnpm publish --access public
 
   upgrade:

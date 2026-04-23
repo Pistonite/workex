@@ -3,6 +3,7 @@ version: '3'
 includes:
   mdbook:
     taskfile: ../../node_modules/mono-dev/task/mdbook.yaml
+    optional: true
     internal: true
 
 tasks:

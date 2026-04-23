@@ -2,7 +2,8 @@ version: '3'
 
 includes:
   common:
-    taskfile: ./packages/mono-dev/task/common.yaml
+    taskfile: ./node_modules/mono-dev/task/common.yaml
+    optional: true
     flatten: true
 
   cli:         { taskfile: ./packages/cli,              dir: ./packages/cli,              internal: true }
