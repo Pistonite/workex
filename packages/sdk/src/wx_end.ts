@@ -28,41 +28,6 @@ export interface WxEnd extends WxCloseController {
     send: (message: WxMessage) => WxVoid;
 }
 
-/**
- * First
- *
- * Second
- */
-export class Foo {
-    /**
-     * This
-     *
-     * is a bar
-     */
-    bar: string
-    /**
-     * This
-     *
-     * is the constructor
-     */
-    constructor() {
-        this.bar = "hello";
-    }
-    /**
-     * This
-     *
-     * is the test
-     */
-    test() {
-        console.info('hi');
-    }
-}
-
-/**
- * First
- *
- * Second
- */
 export interface WxEndOptions {
     /**
      * If specified and non-zero, the creation will fail if the connection
@@ -75,8 +40,6 @@ export interface WxEndOptions {
 }
 
 /**
- *
- * 
  * Create a {@link WxEnd} for messaging to a `Worker` or `WorkerGlobalScope`.
  *
  * Note that even `Window` objects satisfy the `WorkerLike` interface,
@@ -141,20 +104,6 @@ export const wxMakeWorkerEnd = async (
 
     return { val: end };
 };
-
-/**
- * Create an `WxEnd` bound to the global `WorkerGlobalScope`.
- *
- * @remarks
- * Calling this when `globalThis` is not a `WorkerGlobalScope` will result in an error.
- * Calling this function multiple times will return the same promise - even if previous
- * call returned an error.
- *
- * **Internal API** - See {@link public!wxWorkerGlobal}
- *
- * @variable
- */
-export const test = "123";
 
 /**
  * Create an `WxEnd` bound to the global `WorkerGlobalScope`.

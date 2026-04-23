@@ -10,7 +10,8 @@ pnpm exec tsc
 ```
 
 ```admonish tip
-If you are using `npm`, replace `pnpm exec` with `npx`
+If you are using `npm`, replace `pnpm exec` with `npx`.
+If you are using `@typescript/native-preview`, replace `tsc` with `tsgo`.
 ```
 
 To bundle the TS code we wrote and the SDK library, we will use [`bun`](https://bun.sh/),
@@ -28,7 +29,7 @@ We will also create a HTML file that does nothing but loads `index.js`:
 -TXTPP#include ../../../example-tutorial/dist/index.html
 ```
 
-Now run `pnpm exec serve` to serve the example locally, and open
+Now run `pnpm exec serve dist` to serve the example locally, and open
 it in your browser. You should see something like this in the console:
 
 ```
@@ -42,7 +43,7 @@ Worker: ready to be initialized!
 Worker: (fakely) initialized!
 App: calling worker.process()
 Worker: processing input: hello foo
-App: got response from worker: {val: 'hello foo bar'}
+App: got response from worker: Object { val: 'hello foo bar' }
 ```
 
 ```admonish note

@@ -106,10 +106,11 @@ export const wxFuncProtocol = 4 as const;
  * Message object with the `s` field set to "workex" to not be confused with messages
  * with other libraries
  */
-export interface WxMessage extends WxPayload 
-    { s: typeof wxInternalProtocol };
+export interface WxMessage extends WxPayload {
+    s: typeof wxInternalProtocol;
+}
 
-/** 
+/**
  * @summary Validate the received data is a valid workex message
  */
 export const isWxMessageEvent = (event: unknown): event is { data: WxPayload } => {
@@ -138,7 +139,7 @@ export interface WxMessageController extends WxCloseController {
      * Start the handshake process.
      */
     start: () => Promise<WxVoid>;
-};
+}
 
 /**
  * Wrapper function for adding listener for `"message"` events
