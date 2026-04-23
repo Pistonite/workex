@@ -45,7 +45,9 @@ pnpm i @pistonite/workex
 The [tutorials](./tutorial/index.md) shows basic examples for using the SDK.
 You can also refer to the [SDK reference](./reference/index.md) when needed.
 
-Note that:
+Note that
 - The SDK version and CLI version should have the same minor version (the major version will always be `0`)
   - i.e. `0.1.1` and `0.1.0` are compatible with each other, but not `0.1.1` and `0.2.0`
-- The SDK is TypeScript-only, so a bundler is needed to consume it.
+- The SDK is ESM-only. It's recommended to bundle your app with a bundler like `rollup`, `vite` or `bun`.
+
+The API Documentation of the SDK is at [https://workex.pistonite.dev/docs](/docs)

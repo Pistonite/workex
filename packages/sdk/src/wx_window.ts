@@ -11,42 +11,15 @@ import {
     type WxOnRecvFn,
 } from "./wx_message.ts";
 import { log } from "./wx_log.ts";
-
-/**
- * Things that looks like a `Window`
- */
-export type WindowLike = {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    postMessage: (message: any, targetOrigin: string) => any;
-    addEventListener: (
-        type: string,
-        listener: (event: any) => any,
-        options?: { signal?: any },
-    ) => any;
-    opener?: WindowLike | null;
-    parent?: WindowLike | null;
-    location?: {
-        origin?: string;
-    };
-    open: (url: string, target: string, features: string) => WindowLike | null;
-    close?: () => void;
-    closed?: boolean;
-    /* eslint-enable @typescript-eslint/no-explicit-any */
-};
-
-export type IFrameLike = {
-    src: string;
-    contentWindow?: WindowLike | null;
-};
+import type { IFrameLike, WindowLike } from "./wx_util.ts";
 
 const wxSameContextGlobalEndCreator = "__workex_scgec";
 
 /**
  * Controller for the global `Window` object
  * for talking to other `Window`s
- *
  */
-export type WxWindow = {
+export interface WxWindow {
     /**
      * Create a {@link WxEnd} for messaging to the owner of the window.
      * For window opened with `window.open`, this is the window that opened the window (i.e. the `window.opener` object).
@@ -77,7 +50,7 @@ export type WxWindow = {
         onRecv: WxOnRecvFn,
         options?: WxFrameLinkOptions,
     ): Promise<WxResult<WxEnd>>;
-};
+}
 
 /**
  * Options for opening a window. See {@link wxPopup}

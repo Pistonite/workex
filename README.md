@@ -8,5 +8,6 @@ Worker Exchange.
 
 The In-house messaging (RPC) library for JS `Worker` and `Window`s
 
-See https://workex.pistonite.dev
+- Documentation website: https://workex.pistonite.dev
+- TypeScript API Documentation: https://workex.pistonite.dev/docs
 

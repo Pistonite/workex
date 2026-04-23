@@ -2,7 +2,8 @@ version: '3'
 
 includes:
   cargo:
-    taskfile: ../mono-dev/task/cargo.yaml
+    taskfile: ../../node_modules/mono-dev/task/cargo.yaml
+    optional: true
     internal: true
 
 tasks:

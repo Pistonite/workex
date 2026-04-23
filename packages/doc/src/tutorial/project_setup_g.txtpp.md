@@ -4,8 +4,15 @@ We will use a bare-bone node project as the starting point.
 
 If you want to follow along from scratch, create an empty directory.
 Or, you can clone the repo and use `packages/example-tutorial` directory,
-which has all the code already there. (Code blocks on these tutorial pages actually pull
-code directly from those files)
+which has all the code already there. Code blocks on these tutorial pages actually pull
+code directly from those files. If you choose to do so, please build the SDK locally first
+by running:
+
+```bash
+pnpm install
+cd packages/sdk
+pnpm exec monolibbuild
+```
 
 ## Project Structure
 The project should have `package.json`, `tsconfig.json` and a `src` directory
@@ -47,7 +54,10 @@ dependencies:
 ```admonish note
 The version of `@pistonite/workex` in the example is `workspace:*`
 because the example in the repo references the library in the workspace.
-Yours should be the real version number
+Yours should be the real version number.
+
+I am experimenting with `@typescript/native-preview` to use `tsgo` - the native port
+of TypeScript.
 ```
 
 Now, create `tsconfig.json`:

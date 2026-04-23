@@ -6,7 +6,7 @@ import { log } from "./wx_log.ts";
 /**
  * Payload sendable to a {@link WxEnd}
  */
-export type WxPayload = {
+export interface WxPayload {
     /**
      * The protocol identifier. Listeners on the other side
      * maybe use this identifier to choose if they should handle or ignore
@@ -47,16 +47,20 @@ export type WxPayload = {
      * this should probably be something seraializable to JSON.
      */
     d: unknown;
-};
+}
 
 /**
  * Internal protocol used for implementation of lower-level
  * communication before control is passed to user-defined interfaces
+ *
+ * @ignore
  */
 export const wxInternalProtocol = "workex" as const;
 
+/** Func ID for return value @ignore */
 export const wxFuncReturn = 0 as const;
 
+/** Func ID for return exception @ignore */
 export const wxFuncReturnError = 1 as const;
 
 /**
@@ -64,9 +68,11 @@ export const wxFuncReturnError = 1 as const;
  * This func ID is used when establishing connection when creating {@link WxEnd}
  *
  * This func ID is handled by {@link WxEnd}
+ *
+ * @ignore
  */
 export const wxFuncHandshake = 2 as const;
-/** Hello handshake message */
+/** Hello handshake message @ignore */
 export const wxHandshakeMsgHello = 1 as const;
 
 /**
@@ -75,6 +81,8 @@ export const wxHandshakeMsgHello = 1 as const;
  * active side may not know about it
  *
  * This func ID is handled by {@link WxEnd}
+ *
+ * @ignore
  */
 export const wxFuncClose = 3 as const;
 
@@ -89,6 +97,7 @@ export const wxFuncClose = 3 as const;
  * - m: 0 = query, 1 = agree, 2 = disagree
  * - d: array of protocol names
  *
+ * @ignore
  *
  */
 export const wxFuncProtocol = 4 as const;
@@ -97,9 +106,13 @@ export const wxFuncProtocol = 4 as const;
  * Message object with the `s` field set to "workex" to not be confused with messages
  * with other libraries
  */
-export type WxMessage = WxPayload & { s: typeof wxInternalProtocol };
+export interface WxMessage extends WxPayload {
+    s: typeof wxInternalProtocol;
+}
 
-/** Validate the received data is a valid workex message */
+/**
+ * @summary Validate the received data is a valid workex message
+ */
 export const isWxMessageEvent = (event: unknown): event is { data: WxPayload } => {
     if (!event) {
         return false;
@@ -121,14 +134,18 @@ export const isWxMessageEvent = (event: unknown): event is { data: WxPayload } =
  * Controller for the lowest level of message passing using `MessageEvent`s.
  * This is used internally by {@link WxEnd}
  */
-export type WxMessageController = WxCloseController & {
+export interface WxMessageController extends WxCloseController {
     /**
      * Start the handshake process.
      */
     start: () => Promise<WxVoid>;
-};
+}
 
-/** Wrapper function for adding listener for `"message"` events */
+/**
+ * Wrapper function for adding listener for `"message"` events
+ *
+ * @ignore
+ */
 export type AddMessageEventListenerFn = (
     listener: (event: unknown) => void,
     signal: unknown,
@@ -343,7 +360,7 @@ export const wxMakeMessageController = (
 /**
  * Controller for closing the messaging channel
  */
-export type WxCloseController = {
+export interface WxCloseController {
     /**
      * Mark the channel as closed and unregisters all message handlers
      * registered by the end. If handshake is still in progress, it will
@@ -359,7 +376,7 @@ export type WxCloseController = {
 
     /** Check if the end is closed */
     isClosed: () => boolean;
-};
+}
 
 export const wxMakeCloseController = (): WxCloseController => {
     let isClosed = false;

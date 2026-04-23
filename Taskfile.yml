@@ -2,7 +2,8 @@ version: '3'
 
 includes:
   common:
-    taskfile: ./packages/mono-dev/task/common.yaml
+    taskfile: ./node_modules/mono-dev/task/common.yaml
+    optional: true
     flatten: true
 
   cli:         { taskfile: ./packages/cli,              dir: ./packages/cli,              internal: true }
@@ -17,52 +18,39 @@ tasks:
     cmds:
       - task: cargo-binstall
         vars:
-          PACKAGES: txtpp mdbook mdbook-admonish live-server cargo-watch
+          PACKAGES: txtpp mdbook mdbook-admonish shwoop
 
   install:
-    cmds:
-      - magoo install
-      - pnpm install
-      - task: post-install
-
-  install-ci:
-    cmds:
-      - pnpm install --frozen-lockfile
-      - task: post-install
+    - pnpm install
+    - task: post-install
 
   post-install:
-    cmds:
-      - task: doc:install
-      - task: sdk:install
+    - task: doc:install
+    - task: sdk:install
       
   check:
-    cmds:
-      - task: cli:check
-      - task: sdk:check
-      - task: ex-multiwindow:generate
-      - task: ex-multiwindow:check
+    - task: sdk:build
+    - task: cli:check
+    - task: sdk:check
+    - task: ex-multiwindow:generate
+    - task: ex-multiwindow:check
 
   test:
-    cmds:
-      - task: ex-tutorial:gen
-
-  typedoc:
-    cmds:
-      - pnpm exec typedoc
-
-  serve:
-    deps: [typedoc]
-    cmds:
-      - pnpm exec serve docs
+    - task: ex-tutorial:gen
 
   build-doc:
-    cmds:
-      - task: doc:build
-      - task: typedoc
-      - cp -r docs packages/doc/book
+    - task: doc:build
+    - task: sdk:doc
+    - cp -r packages/sdk/docs packages/doc/book
 
   publish:
-    cmds:
-      - task: sdk:publish
+    - task: sdk:publish
+
+
+  upgrade:
+    - task: sdk:upgrade
+    - cargo upgrade
+    - pnpm dedupe
+    - pnpm dedupe --check
 
 

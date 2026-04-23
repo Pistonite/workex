@@ -4,10 +4,10 @@ import {
     wxPopup,
     wxWindowOwner,
     wxWrapHandler,
-    logLevel,
+    wxLogger,
 } from "@pistonite/workex";
 
-logLevel.debug();
+wxLogger.setLevel("debug");
 
 import type { SideA, SideB } from "./proto.ts";
 import { multiwindowSideA } from "./interfaces/SideA.bus";
