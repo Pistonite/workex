@@ -5,4 +5,4 @@ packages:
   - packages/example-tutorial
 
 catalog:
-  mono-dev: github:pistonight/mono-dev#main
+  mono-dev: github:pistonight/mono-dev#dist

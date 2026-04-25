@@ -48,7 +48,7 @@ tasks:
 
 
   upgrade:
-    - task: sdk:upgrade
+    - pnpm up -r mono-dev @pistonite/pure
     - cargo upgrade
     - pnpm dedupe
     - pnpm dedupe --check
