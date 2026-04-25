@@ -24,7 +24,4 @@ tasks:
     - rm -rf dist
     - task: check
     - task: build
-    - pnpm publish --access public
-
-  upgrade:
-    - pnpm up mono-dev @pistonite/pure
+    - task: ecma:publish
