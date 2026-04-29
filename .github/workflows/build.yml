@@ -43,6 +43,7 @@ jobs:
           ecma-pnpm: true
       - run: pnpm install
       - run: task post-install
+      - run: task exec -- sdk:build
       - run: task check
       - run: task test
 

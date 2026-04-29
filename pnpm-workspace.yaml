@@ -6,3 +6,4 @@ packages:
 
 catalog:
   mono-dev: github:pistonight/mono-dev#dist
+  "@pistonite/pure": ^0.29.6
