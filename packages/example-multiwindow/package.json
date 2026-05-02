@@ -5,8 +5,10 @@
         "@pistonite/workex": "workspace:*",
         "@types/bun": "^1.3.13"
     },
-    "nocheck": [
-        "/src/interfaces"
-    ],
+    "pistonight/mono-dev": {
+        "nocheck": [
+            "/src/interfaces"
+        ]
+    },
     "imports": {}
 }
