@@ -18,7 +18,7 @@ tasks:
     cmds:
       - task: cargo-binstall
         vars:
-          PACKAGES: txtpp mdbook mdbook-admonish shwoop
+          PACKAGES: txtpp mdbook@0.4 mdbook-admonish shwoop
 
   install:
     - pnpm install
@@ -48,7 +48,7 @@ tasks:
 
 
   upgrade:
-    - pnpm up -r mono-dev @pistonite/pure
+    - pnpm up -r mono-dev @pistonite/pure @types/bun serve
     - cargo upgrade
     - pnpm dedupe
     - pnpm dedupe --check
