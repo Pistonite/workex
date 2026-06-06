@@ -1,6 +1,6 @@
 {
 	"devDependencies": {
 		"eslint": "^9",
-        "mono-dev": "catalog:"
+		"mono-dev": "catalog:"
 	}
 }
