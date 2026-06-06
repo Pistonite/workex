@@ -21,20 +21,18 @@ generates code that refers to the `testapp` protocol and links our `AppSide` and
 workex src/Interfaces.ts -p testapp -l AppSide,WorkerSide
 ```
 
-```admonish tip
-The `protocol` string is also used as prefix for generated functions,
-if it only contains lowercase alphabetic characters (`a-z`). Otherwise,
-you also need specify `--prefix` flag to specify another prefix. Using
-this flag is recommended if your protocol contains a version. For example
+> [!TIP]
+> The `protocol` string is also used as prefix for generated functions,
+> if it only contains lowercase alphabetic characters (`a-z`). Otherwise,
+> you also need specify `--prefix` flag to specify another prefix. Using
+> this flag is recommended if your protocol contains a version. For example
+>
+>     workex -p myproto-1.0.0 --prefix myproto
+>
 
-    workex -p myproto-1.0.0 --prefix myproto
-
-```
-
-```admonish note
-The order of `-l` arguments don't matter, i.e. `-l WorkerSide,AppSide` behaves exactly
-the same
-```
+> [!NOTE]
+> The order of `-l` arguments don't matter, i.e. `-l WorkerSide,AppSide` behaves exactly
+> the same
 
 This should generate the `src/interfaces/` directory. Note:
 - You can use `--dir` to change the name `interfaces` to something else,
@@ -58,13 +56,12 @@ The directory structure should now look something like:
 The `.gitignore` file is automatically generated to ignore everything in the `interfaces`
 directory. You can turn it off with `--no-gitignore`.
 
-```admonish tip
-The generated files should be ignored from check tools like ESLint or Prettier.
-See [ESLint Documentation](https://eslint.org/docs/latest/use/configure/ignore)
-or [Prettier Documentation](https://prettier.io/docs/en/ignore.html). The tool
-doesn't emit any disable directives because they might cause issues, for example
-with ESLint's `--report-unused-directives` option.
-
-If you don't mean to git-ignore the output, you can also use a wrapper command
-to call the CLI then run prettier or other formatter to fix the output.
-```
+> [!TIP]
+> The generated files should be ignored from check tools like ESLint or Prettier.
+> See [ESLint Documentation](https://eslint.org/docs/latest/use/configure/ignore)
+> or [Prettier Documentation](https://prettier.io/docs/en/ignore.html). The tool
+> doesn't emit any disable directives because they might cause issues, for example
+> with ESLint's `--report-unused-directives` option.
+>
+> If you don't mean to git-ignore the output, you can also use a wrapper command
+> to call the CLI then run prettier or other formatter to fix the output.

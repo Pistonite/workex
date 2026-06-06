@@ -18,7 +18,7 @@ tasks:
     cmds:
       - task: cargo-binstall
         vars:
-          PACKAGES: txtpp mdbook@0.4 mdbook-admonish shwoop
+          PACKAGES: txtpp mdbook shwoop
 
   install:
     - pnpm install
@@ -43,9 +43,16 @@ tasks:
     - task: sdk:doc
     - cp -r packages/sdk/docs packages/doc/book
 
-  publish:
+  publish-sdk:
     - task: sdk:publish
 
+  publish-cli:
+    vars:
+      TAG:
+        sh: grep -E '^version =' packages/cli/Cargo.toml | head -n1 | sed -E 's/^version = "([^"]+)"$/\1/'
+    cmds:
+      - git tag v{{.TAG}}
+      - git push origin v{{.TAG}}
 
   upgrade:
     - pnpm up -r mono-dev @pistonite/pure @types/bun serve

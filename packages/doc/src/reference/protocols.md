@@ -15,9 +15,8 @@ using the same underlying connection.
 
 ![Two protocols operating on the same bus](./protocols.svg)
 
-```admonish info
-See the [tutorial](../tutorial/running_cli.md) for what the command means
-```
+> [!NOTE]
+> See the [tutorial](../tutorial/running_cli.md) for what the command means
 
 For ergnomics and to simplify the implementation, the BUS enforces
 that each protocol can only register one connection. The protocols
@@ -65,7 +64,6 @@ if (result.err) {
 }
 ```
 
-```admonish tip
-Both sides will receive this error, so it's also helpful to have a nice user-friendly
-UI in the main app that explains to the user why they can't use the plugin.
-```
+> [!TIP]
+> Both sides will receive this error, so it's also helpful to have a nice user-friendly
+> UI in the main app that explains to the user why they can't use the plugin.

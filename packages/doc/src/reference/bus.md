@@ -1,9 +1,8 @@
 # Bidirectional Unicall System (BUS)
 
-```admonish warning
-This is term completely made up by me to fit the BUS acronym and does not
-have significance in the industry!
-```
+> [!WARNING]
+> This is term completely made up by me to fit the BUS acronym and does not
+> have significance in the industry!
 
 With the `WxEnd` abstraction, we have a uniform way of communicating
 between different contexts, regardless of if it's between `Window`s,

@@ -22,13 +22,12 @@ There are five creator functions available, which can be divided into 2 groups:
 The passive side calls `wxWorker(worker)`, and the active side calls `wxWorkerGlobal`
 to establish the connection using `globalThis`.
 
-```admonish tip
-See [Active and Passive Sides](./messaging.md#active-and-passive-sides) for
-what active and passive means.
-
-The [tutorial](../tutorial/usage_g.md) has full examples for setting up
-connection for workers
-```
+> [!TIP]
+> See [Active and Passive Sides](./messaging.md#active-and-passive-sides) for
+> what active and passive means.
+>
+> The [tutorial](../tutorial/usage_g.md) has full examples for setting up
+> connection for workers
 
 ![wxWorker and wxWorkerGlobal](./creator_image2.svg)
 
@@ -78,7 +77,6 @@ const result = await wxWindowOwner(ownerOrigin)({
 });
 ```
 
-```admonish tip
-The [multiwindow test app](https://github.com/Pistonite/workex/tree/main/packages/example-multiwindow/src/main.ts) has examples for how to use these creator functions
-for windows
-```
+> [!TIP]
+> The [multiwindow test app](https://github.com/Pistonite/workex/tree/main/packages/example-multiwindow/src/main.ts) has examples for how to use these creator functions
+> for windows
