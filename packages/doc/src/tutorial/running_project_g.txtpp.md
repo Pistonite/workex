@@ -9,10 +9,9 @@ the example conforms to the API contracts:
 pnpm exec tsc
 ```
 
-```admonish tip
-If you are using `npm`, replace `pnpm exec` with `npx`.
-If you are using `@typescript/native-preview`, replace `tsc` with `tsgo`.
-```
+> [!TIP]
+> If you are using `npm`, replace `pnpm exec` with `npx`.
+> If you are using `@typescript/native-preview`, replace `tsc` with `tsgo`.
 
 To bundle the TS code we wrote and the SDK library, we will use [`bun`](https://bun.sh/),
 which offers zero-config bundling for TypeScript:
@@ -46,11 +45,10 @@ Worker: processing input: hello foo
 App: got response from worker: Object { val: 'hello foo bar' }
 ```
 
-```admonish note
-Your output might have a different order - That's the magic
-of multithreading! Now it's time for you to go back
-to the source and see if the output makes sense to you.
-
-You can also try refreshing the window a few times,
-and you might see the order of the logs change!
-```
+> [!NOTE]
+> Your output might have a different order - That's the magic
+> of multithreading! Now it's time for you to go back
+> to the source and see if the output makes sense to you.
+>
+> You can also try refreshing the window a few times,
+> and you might see the order of the logs change!

@@ -7,16 +7,15 @@ is done by calling `postMessage` on an object, typically a `Worker`, `WorkerGlob
 or a `Window` in the Web. The message will be delivered as a `MessageEvent`
 to event listeners listening for the `"message"` event.
 
-```admonish note
-`Worker`, `WorkerGlobalScope`, and `Window` has slightly different behavior
-when it comes to how `postMessage` works:
-- Calling `postMessage` on a worker sends the message to the worker
-- Calling `postMessage` on a `WorkerGlobalScope` sends the message to the 
-  context that created the worker, on the worker object
-  - Note in this case, `globalThis.postMessage` sends the message to the creator of the worker
-- Calling `postMessage` on a `Window` sends the message to that `Window`.
-  - Note in this case, `globalThis.postMessage` sends the message to the calling context itself
-```
+> [!NOTE]
+> `Worker`, `WorkerGlobalScope`, and `Window` has slightly different behavior
+> when it comes to how `postMessage` works:
+> - Calling `postMessage` on a worker sends the message to the worker
+> - Calling `postMessage` on a `WorkerGlobalScope` sends the message to the 
+>   context that created the worker, on the worker object
+>   - Note in this case, `globalThis.postMessage` sends the message to the creator of the worker
+> - Calling `postMessage` on a `Window` sends the message to that `Window`.
+>   - Note in this case, `globalThis.postMessage` sends the message to the calling context itself
 
 Therefore, messaging is only relevant when there are multiple JS contexts.
 These are the usual ways how multiple JS contexts are usually involved or created:

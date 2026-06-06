@@ -25,9 +25,9 @@ jobs:
     steps:
       - uses: Pistonight/mono-dev/actions/setup@main
         with:
-          mono-dev: false
           rust: stable
           rust-native: ${{ matrix.target }}
+          ecma-pnpm: true
       - uses: Pistonight/mono-dev/actions/rust-xplat@main
         with:
           arch: ${{ matrix.target }}
@@ -38,10 +38,8 @@ jobs:
     steps:
       - uses: Pistonight/mono-dev/actions/setup@main
         with:
-          mono-dev: false
           rust: stable
           ecma-pnpm: true
-      - run: pnpm install
       - run: task post-install
       - run: task exec -- sdk:build
       - run: task check
@@ -52,12 +50,10 @@ jobs:
     steps:
       - uses: Pistonight/mono-dev/actions/setup@main
         with:
-          mono-dev: false
           rust: stable
           ecma-pnpm: true
           tool-mdbook: true
           tool-cargo-install: txtpp
-      - run: pnpm install
       - run: task post-install
       - run: task build-doc
       - uses: actions/upload-pages-artifact@v5
