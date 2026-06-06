@@ -27,6 +27,7 @@ jobs:
         with:
           rust: stable
           rust-native: ${{ matrix.target }}
+          ecma-pnpm: true
       - uses: Pistonight/mono-dev/actions/rust-xplat@main
         with:
           arch: ${{ matrix.target }}
