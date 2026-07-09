@@ -1,3 +1,6 @@
+minimumReleaseAgeExclude:
+  - '@pistonite/*'
+
 packages:
   - packages/sdk
   - packages/mono-dev
@@ -5,5 +8,5 @@ packages:
   - packages/example-tutorial
 
 catalog:
-  "@pistonite/pure": ^0.29.7
+  "@pistonite/pure": ^0.29.8
   mono-dev: github:pistonight/mono-dev#dist

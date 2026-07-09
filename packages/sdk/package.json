@@ -1,6 +1,6 @@
 {
     "name": "@pistonite/workex",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "type": "module",
     "private": true,
     "description": "TypeScript SDK for Workex - The in-house messaging bindgen library for my projects",
