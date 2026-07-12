@@ -3,7 +3,6 @@ use std::path::Path;
 
 use cu::pre::*;
 
-use cu::str::PathExtension;
 use swc_common::comments::SingleThreadedComments;
 use swc_common::errors::Handler;
 use swc_common::sync::Lrc;
