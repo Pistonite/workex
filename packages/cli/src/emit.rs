@@ -1,8 +1,6 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use cu::pre::*;
-
 use codize::{Concat, cblock, cconcat};
 
 use crate::ir;
@@ -22,10 +20,7 @@ fn header() -> Concat {
 pub fn emit(pkg: &ir::Package) -> cu::Result<()> {
     let func_map = make_func_id_map(pkg);
     let out_dir = &pkg.out_dir;
-    if out_dir.exists() {
-        std::fs::remove_dir_all(out_dir).context("failed to remove existing output directory")?;
-    }
-    std::fs::create_dir_all(out_dir).context("failed to create output directory")?;
+    cu::fs::make_dir_empty(out_dir)?;
 
     for interface in pkg.interfaces.values() {
         emit_interface_impl(interface, &func_map, out_dir)?;
@@ -137,7 +132,7 @@ fn emit_interface_impl(
     code.push(recver_decl.into());
 
     let path = out_dir.join(format!("{}.ts", interface.name));
-    write_file(&path, code.to_string())?;
+    cu::fs::write(&path, code.to_string())?;
 
     Ok(())
 }
@@ -255,7 +250,7 @@ fn emit_interface_bus(
     ];
 
     let path = out_dir.join(format!("{}.bus.ts", interface.name));
-    write_file(&path, output.to_string())?;
+    cu::fs::write(&path, output.to_string())?;
 
     Ok(())
 }
@@ -264,7 +259,7 @@ fn emit_gitignore(out_dir: &Path) -> cu::Result<()> {
     let mut content = String::from("# workex generated files\n");
     let path = out_dir.join(".gitignore");
     content.push_str("*\n");
-    write_file(&path, &content)?;
+    cu::fs::write(&path, &content)?;
 
     Ok(())
 }
@@ -275,11 +270,4 @@ fn quoted(s: &str) -> String {
     } else {
         format!("\"{s}\"")
     }
-}
-
-fn write_file<T: AsRef<str>>(path: &Path, code: T) -> cu::Result<()> {
-    std::fs::write(path, code.as_ref())
-        .context(format!("Failed to write to {}", path.display()))?;
-
-    Ok(())
 }

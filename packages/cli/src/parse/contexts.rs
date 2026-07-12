@@ -84,14 +84,7 @@ impl<'a> FileContext<'a> {
     /// Create a new file parsing context and load the file
     pub fn try_new(ctx: &'a mut Context, path: &str) -> cu::Result<Self> {
         let path = Path::new(path);
-
-        let Some(filename) = path.file_name() else {
-            cu::bail!("failed to get file name from path: {}", path.display());
-        };
-
-        let Some(filename) = filename.to_str() else {
-            cu::bail!("file name must be valid UTF-8");
-        };
+        let filename = path.file_name_str()?;
 
         if filename.ends_with(".bus.ts") {
             cu::bail!(".bus.ts is a reserved file extension for generated files.");
